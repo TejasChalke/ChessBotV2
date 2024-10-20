@@ -1,18 +1,12 @@
 package com.example.chessbotv2.bot;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 public class Board {
     int[] board;
     int[] kingIndex; // 0 -> white, 1 -> black
     int playerToMove;
-    /*
-    * Castle Mask:
-    * 1 - White king side
-    * 2 - White queen side
-    * 4 - Black king side
-    * 8 - Black queen side
-    * */
     int castleMask;
     int epSquare;
     int halfMoveClock;
@@ -22,6 +16,7 @@ public class Board {
     public Board() {
         init();
         setUpBoard(BoardUtil.DefaultFEN);
+//        setUpBoard("rnbqkbnr/p1pppppp/1p6/8/8/5P2/PPPPP1PP/RNBQKBNR w KQkq - 0 1");
     }
 
     public Board(String fen) {
@@ -41,6 +36,7 @@ public class Board {
     }
 
     void setUpBoard(String fen) {
+        Arrays.fill(board, 0);
         int rank = 7, file = 0;
         String[] str = fen.split(" ");
 

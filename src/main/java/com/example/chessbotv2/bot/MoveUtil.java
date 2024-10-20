@@ -20,11 +20,18 @@ public class MoveUtil {
     static int[][] pawnAttackOffset = new int[][] {{7, 9}, {-7, -9}};
     static int[][] preComputedSlidingDistance = new int[64][];
     static final int White_King_Start_Square = 4;
+    static final int White_Queen_Side_Rook_Square = 0;
+    static final int White_King_Side_Rook_Square = 7;
     static final int Black_King_Start_Square = 60;
+    static final int Black_Queen_Side_Rook_Square = 56;
+    static final int Black_King_Side_Rook_Square = 63;
     static final int White_King_Side_Castle_Mask = 1;
     static final int White_Queen_Side_Castle_Mask = 2;
+    static final int White_Castle_Mask = 3;
     static final int Black_King_Side_Castle_Mask = 4;
     static final int Black_Queen_Side_Castle_Mask = 8;
+    static final int Black_Castle_Mask = 12;
+    static final int Complete_Castle_Mask = 15;
 
     static {
         int[][] knightDir = new int[][] {{1, 2}, {2, 1}, {2, -1}, {1, -2}, {-1, -2}, {-2, -1}, {-2, 1}, {-1, 2}};
@@ -76,9 +83,9 @@ public class MoveUtil {
                 right,
                 left,
                 Math.min(top, left),
-                Math.min(bottom, left),
+                Math.min(bottom, right),
                 Math.min(top, right),
-                Math.min(bottom, right)
+                Math.min(bottom, left)
             };
         }
     }

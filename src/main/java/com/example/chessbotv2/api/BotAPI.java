@@ -21,4 +21,14 @@ public class BotAPI {
 
         return ResponseEntity.ok("Board Set");
     }
+
+    @GetMapping("/testMoves/{depth}")
+    private ResponseEntity<String> testMoves(@PathVariable int depth) {
+        if (this.bot == null) {
+            return ResponseEntity.ok("Bot is not initialized");
+        }
+
+        bot.testMoves(depth);
+        return ResponseEntity.ok("Board Set");
+    }
 }
