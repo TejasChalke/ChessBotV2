@@ -1,12 +1,14 @@
 package com.example.chessbotv2.bot;
 
+import java.util.ArrayList;
+
 public class Bot {
     Board board;
     MoveGenerator moveGenerator;
     public Bot() {
         board = new Board();
         moveGenerator = new MoveGenerator(board);
-        moveGenerator.generateMoves();
+        ArrayList<Move> moves = moveGenerator.generateMoves();
     }
 
     public Bot(String fen) {
