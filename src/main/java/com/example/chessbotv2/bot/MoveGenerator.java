@@ -23,9 +23,9 @@ public class MoveGenerator {
     private ArrayList<Move> getLegalMoves() {
         ArrayList<Move> legalMoves = new ArrayList<>();
         // generate king moves first in case of double check to return early
-        for (int targetSquare: MoveUtil.preComputedKingMoves[board.kingIndex[board.isWhiteToMove() ? 0 : 1]]) {
+        for (int targetSquare: MoveUtil.preComputedKingMoves[currentPlayerKingIndex]) {
             // square is not attacked by an enemy piece
-            if (isNotAttacked(targetSquare) && board.board[targetSquare] == Pieces.None) {
+            if (isNotAttacked(targetSquare) && (Pieces.isNone(board.board[targetSquare]) || !Pieces.isSameColor(board.board[currentPlayerKingIndex], board.board[targetSquare]))) {
                 legalMoves.add(new Move(currentPlayerKingIndex, targetSquare, Move.NormalMove));
             }
         }
@@ -51,7 +51,7 @@ public class MoveGenerator {
                 legalMoves.add(new Move(currentPlayerKingIndex, currentPlayerKingIndex + 2, Move.Castle));
             }
             // queen side castling
-            if (!board.isChecked && (board.castleMask & MoveUtil.Black_King_Side_Castle_Mask) != 0 && board.board[MoveUtil.Black_King_Start_Square - 1] == Pieces.None && board.board[MoveUtil.Black_King_Start_Square - 2] == Pieces.None && board.board[MoveUtil.Black_King_Start_Square - 3] == Pieces.None && isNotAttacked(MoveUtil.Black_King_Start_Square - 1) && isNotAttacked(MoveUtil.Black_King_Start_Square - 2)) {
+            if (!board.isChecked && (board.castleMask & MoveUtil.Black_Queen_Side_Castle_Mask) != 0 && board.board[MoveUtil.Black_King_Start_Square - 1] == Pieces.None && board.board[MoveUtil.Black_King_Start_Square - 2] == Pieces.None && board.board[MoveUtil.Black_King_Start_Square - 3] == Pieces.None && isNotAttacked(MoveUtil.Black_King_Start_Square - 1) && isNotAttacked(MoveUtil.Black_King_Start_Square - 2)) {
                 legalMoves.add(new Move(currentPlayerKingIndex, currentPlayerKingIndex - 2, Move.Castle));
             }
         }
@@ -88,7 +88,7 @@ public class MoveGenerator {
                     if (Pieces.isSameColor(piece, board.board[targetSquare])) break;
                 }
 
-                if (notPinnedNotChecked || (isPinned(startingSquare) && isPinned(startingSquare + offSet))) {
+                if (notPinnedNotChecked || (isPinned(startingSquare) && isMovingInPinDirection(startingSquare, currentPlayerKingIndex, targetSquare))) {
                     // a sliding pinned piece can only move if,
                     // it is not a check and, it is moving in the direction of the pin
                     legalMoves.add(new Move(startingSquare, targetSquare, Move.NormalMove));
@@ -142,7 +142,7 @@ public class MoveGenerator {
 
         // capture on left
         delta = board.isWhiteToMove() ? 7 : -9;
-        if (file > 0 && board.board[startingSquare + delta] != Pieces.None && !Pieces.isSameColor(board.board[startingSquare], board.board[startingSquare + delta]) && (!isPinned(startingSquare) || isPinned(startingSquare + delta))) {
+        if (file > 0 && board.board[startingSquare + delta] != Pieces.None && !Pieces.isSameColor(board.board[startingSquare], board.board[startingSquare + delta]) && (!isPinned(startingSquare) || isMovingInPinDirection(startingSquare, currentPlayerKingIndex, startingSquare + delta))) {
             if ((board.isWhiteToMove() && rank < 6) || (!board.isWhiteToMove() && rank > 1)) {
                 legalMoves.add(new Move(startingSquare, startingSquare + delta, Move.NormalMove));
             }
@@ -155,13 +155,13 @@ public class MoveGenerator {
             }
         }
         // en passant on left
-        if (board.epSquare != -1 && file > 0 && startingSquare + delta == board.epSquare && epPinnedSquare != startingSquare) {
+        if (board.epSquare != -1 && file > 0 && startingSquare + delta == board.epSquare && epPinnedSquare != startingSquare && !isPinned(startingSquare)) {
             legalMoves.add(new Move(startingSquare, board.epSquare, Move.EnPassant));
         }
 
         // capture on right
         delta = board.isWhiteToMove() ? 9 : -7;
-        if (file < 7 && board.board[startingSquare + delta] != Pieces.None && !Pieces.isSameColor(board.board[startingSquare], board.board[startingSquare + delta]) && (!isPinned(startingSquare) || isPinned(startingSquare + delta))) {
+        if (file < 7 && board.board[startingSquare + delta] != Pieces.None && !Pieces.isSameColor(board.board[startingSquare], board.board[startingSquare + delta]) && (!isPinned(startingSquare) || isMovingInPinDirection(startingSquare, currentPlayerKingIndex, startingSquare + delta))) {
             if ((board.isWhiteToMove() && rank < 6) || (!board.isWhiteToMove() && rank > 1)) {
                 legalMoves.add(new Move(startingSquare, startingSquare + delta, Move.NormalMove));
             }
@@ -174,7 +174,7 @@ public class MoveGenerator {
             }
         }
         // en passant on right
-        if (board.epSquare != -1 && file < 7 && startingSquare + delta == board.epSquare && epPinnedSquare != startingSquare) {
+        if (board.epSquare != -1 && file < 7 && startingSquare + delta == board.epSquare && epPinnedSquare != startingSquare && !isPinned(startingSquare)) {
             legalMoves.add(new Move(startingSquare, board.epSquare, Move.EnPassant));
         }
     }
@@ -187,6 +187,12 @@ public class MoveGenerator {
         return  (pinMask & (1L << index)) != 0;
     }
 
+    private boolean isMovingInPinDirection(int index, int kingIndex, int targetSquare) {
+        int dir1 = Math.abs(kingIndex - index);
+        int dir2 = Math.abs(kingIndex - targetSquare);
+        return (dir1 % 7 == dir2 % 7) || (dir1 % 8 == dir2 % 8) || (dir1 % 9 == dir2 % 9) || (index / 8 == kingIndex / 8 && kingIndex / 8 == targetSquare / 8);
+    }
+
     private boolean isBlockingCheck(int index) {
         return (checkMask & (1L << index)) != 0;
     }
@@ -196,10 +202,8 @@ public class MoveGenerator {
         currentPlayerKingIndex = board.isWhiteToMove() ? board.kingIndex[0] : board.kingIndex[1];
         board.isChecked = board.isDoubleChecked = false;
         int otherPlayer = board.playerToMove ^ BoardUtil.PlayerMask;
+
         for (int index=0; index<64; index++) {
-            // we can only generate moves for the king
-            // if it is a double check so break early
-            if (board.isDoubleChecked) break;
             int piece = board.board[index];
             if (piece == Pieces.None || !Pieces.isSameColor(piece, otherPlayer)) continue;
 
@@ -239,9 +243,9 @@ public class MoveGenerator {
             int epPinnedPawn;
 
             if (BoardUtil.isSameRank(epPieceSquare, currentPlayerKingIndex)) {
-                // en passant by both pawns are possible
-                if (currFile > 0 && currFile < 7 && !Pieces.isSameColor(board.board[epPieceSquare - 1], board.board[epPieceSquare]) && Pieces.isPawn(board.board[epPieceSquare - 1]) && !Pieces.isSameColor(board.board[epPieceSquare + 1], board.board[epPieceSquare]) && Pieces.isPawn(board.board[epPieceSquare + 1])) {
-                    // if one pawn takes the other can still block
+                if (currFile > 0 && currFile < 7 && !Pieces.isNone(board.board[epPieceSquare - 1]) && !Pieces.isNone(board.board[epPieceSquare + 1])) {
+                    // pieces on both sides of ep pawn
+                    // pawn can be taken without a discovery check
                     return;
                 }
 
@@ -251,12 +255,12 @@ public class MoveGenerator {
                     boolean isRookOrQueenOnRight = false;
                     int leftIndex = -1, rightIndex = 64;
 
-                    if (BoardUtil.isSameRank(epPieceSquare, epPieceSquare - 1) && !Pieces.isSameColor(board.board[epPieceSquare - 1], board.board[epPieceSquare]) && Pieces.isPawn(board.board[epPieceSquare - 1])) {
+                    if (currFile > 1 && !Pieces.isSameColor(board.board[epPieceSquare - 1], board.board[epPieceSquare]) && Pieces.isPawn(board.board[epPieceSquare - 1])) {
                         // a pawn is on the left of the en passant pawn
                         leftIndex = epPieceSquare - 2;
                         rightIndex = epPieceSquare + 1;
                         epPinnedPawn = epPieceSquare - 1;
-                    } else if (BoardUtil.isSameRank(epPieceSquare, epPieceSquare + 1) && !Pieces.isSameColor(board.board[epPieceSquare + 1], board.board[epPieceSquare]) && Pieces.isPawn(board.board[epPieceSquare + 1])) {
+                    } else if (currFile < 6 && !Pieces.isSameColor(board.board[epPieceSquare + 1], board.board[epPieceSquare]) && Pieces.isPawn(board.board[epPieceSquare + 1])) {
                         // a pawn is on the right of the en passant pawn
                         leftIndex = epPieceSquare - 1;
                         rightIndex = epPieceSquare + 2;
@@ -295,12 +299,12 @@ public class MoveGenerator {
                     boolean isRookOrQueenOnLeft = false;
                     int leftIndex = -1, rightIndex = 64;
 
-                    if (BoardUtil.isSameRank(epPieceSquare, epPieceSquare - 1) && !Pieces.isSameColor(board.board[epPieceSquare - 1], board.board[epPieceSquare]) && Pieces.isPawn(board.board[epPieceSquare - 1])) {
+                    if (currFile > 1 && !Pieces.isSameColor(board.board[epPieceSquare - 1], board.board[epPieceSquare]) && Pieces.isPawn(board.board[epPieceSquare - 1])) {
                         // a pawn is on the left of the en passant pawn
                         leftIndex = epPieceSquare - 2;
                         rightIndex = epPieceSquare + 1;
                         epPinnedPawn = epPieceSquare - 1;
-                    } else if (BoardUtil.isSameRank(epPieceSquare, epPieceSquare + 1) && !Pieces.isSameColor(board.board[epPieceSquare + 1], board.board[epPieceSquare]) && Pieces.isPawn(board.board[epPieceSquare + 1])) {
+                    } else if (currFile < 6 && !Pieces.isSameColor(board.board[epPieceSquare + 1], board.board[epPieceSquare]) && Pieces.isPawn(board.board[epPieceSquare + 1])) {
                         // a pawn is on the right of the en passant pawn
                         leftIndex = epPieceSquare - 1;
                         rightIndex = epPieceSquare + 2;
@@ -315,7 +319,7 @@ public class MoveGenerator {
                             anotherPieceOnRight = true;
                             break;
                         }
-                        rightIndex--;
+                        rightIndex++;
                     }
 
                     if (!anotherPieceOnRight) {
@@ -347,12 +351,24 @@ public class MoveGenerator {
             int pinnedIndex = -1;
             long currCheckMask = 1L << startingSquare;
             long currPinMask = 1L << startingSquare;
+            boolean isPieceCheckingKing = false;
 
             for (int i=1; i<=MoveUtil.preComputedSlidingDistance[startingSquare][d]; i++) {
                 int targetSquare = startingSquare + offSet * i;
 
+                // for squares beyond king where king cannot move.
+                // will break the loop in case a pin exists so no need to check for pin
+                if (isPieceCheckingKing) {
+                    attackMask |= (1L << targetSquare);
+                    // if any piece is present king cannot capture because of attack mask
+                    // and cannot move in case of friendly piece or empty square
+                    break;
+                }
+
                 // in case of friendly piece at targetSquare, will protect it from being captured by the king
-                attackMask |= (1L << targetSquare);
+                // stop calculating the attack mask if enemy piece is pinned
+                if (pinnedIndex == -1) attackMask |= (1L << targetSquare);
+
                 // friendly piece is blocking the path
                 if (board.board[targetSquare] != Pieces.None && Pieces.isSameColor(board.board[targetSquare], piece)) break;
 
@@ -369,19 +385,21 @@ public class MoveGenerator {
                 }
 
                 // if the current piece is pining another piece it can't check directly
+                // so not point updating checkMask
                 if (pinnedIndex == -1) currCheckMask |= (1L << targetSquare);
 
                 if (targetSquare == currentPlayerKingIndex) {
                     if (pinnedIndex == -1) {
                         // no pinned piece found, so it is a direct check
                         checkMask |= currCheckMask;
+                        isPieceCheckingKing = true;
                         if (!board.isChecked) board.isChecked = true;
                         else board.isDoubleChecked = true;
                     } else {
                         // update the pinned mask
                         pinMask |= currPinMask;
+                        break;
                     }
-                    break;
                 }
             }
         }

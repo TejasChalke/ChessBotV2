@@ -7,7 +7,8 @@ public class Bot {
     public Board board;
     MoveGenerator moveGenerator;
     Stack<BoardData> prevBoardState;
-//    int captures, checks;
+    int captures, castles, enPassants;
+
     public Bot() {
         board = new Board();
         moveGenerator = new MoveGenerator(board);
@@ -36,9 +37,10 @@ public class Bot {
         return null;
     }
 
-    public void testMoves(int depth) {
-        for (int i=1; i<=depth; i++) {
-            System.out.println("Number of moves for depth " + i + " are : " + getMoveCount(i));
+    public void testMoves(int depth, boolean rangeTest) {
+        for (int i=(rangeTest ? 1 : depth); i<=depth; i++) {
+            castles = captures = enPassants = 0;
+            System.out.println("Number of moves for depth " + i + " are : " + getMoveCount(i) + " [Castles: " + castles + "], [Captures: " + captures + "], [EP: " + enPassants + "]");
         }
     }
 
@@ -46,22 +48,22 @@ public class Bot {
         if (depth == 0) return 1;
         ArrayList<Move> legalMoves = moveGenerator.generateMoves();
         int cnt = 0;
-//        boolean displayStats = false;
+        boolean displayStats = false;
         for (Move move: legalMoves) {
-//            displayStats = true;
-//            char currPiece = Pieces.getPiece(board.board[move.startingSquare]);
+            displayStats = move.isCastle;
+            char currPiece = Pieces.getPiece(board.board[move.startingSquare]);
             makeMove(move, true);
-//            if (displayStats) {
-//                System.out.println("Piece: " + currPiece);
-//                System.out.println("After making move " + (3-depth) + ": " + move);
-//                board.displayBoard();
-//            }
+            if (displayStats) {
+                System.out.println("Piece: " + currPiece);
+                System.out.println("After making move " + (3-depth) + ": " + move);
+                board.displayBoard();
+            }
             cnt += getMoveCount(depth - 1);
             unMakeMove(move);
-//            if (displayStats) {
-//                System.out.println("After resting move: ");
-//                board.displayBoard();
-//            }
+            if (displayStats) {
+                System.out.println("After resting move: ");
+                board.displayBoard();
+            }
         }
         return cnt;
     }
@@ -78,7 +80,11 @@ public class Bot {
         if (move.isEnPassant) {
             targetPiece = board.board[board.epSquare];
             board.board[board.epSquare] = Pieces.None;
+            enPassants++;
         }
+
+        // testing
+        if ((targetPiece & 7) != 0) captures++;
 
         if (storeState) {
             // store data to unmake move
@@ -94,6 +100,7 @@ public class Bot {
 
         // handle castling moves
         if (move.isCastle) {
+            castles++;
             if (board.isWhiteToMove()) {
                 if (move.targetSquare == MoveUtil.White_King_Start_Square + 2) {
                     // move the rook to the left of king
@@ -123,26 +130,56 @@ public class Bot {
             // handle castling rights
             if (board.isWhiteToMove() && (board.castleMask & MoveUtil.White_Castle_Mask) != 0) {
                 if (Pieces.isKing(startingPiece)) {
+                    // white king moved
                     board.castleMask &= MoveUtil.Black_Castle_Mask;
                 }
                 else if (Pieces.isRook(startingPiece)) {
                     if (move.startingSquare == MoveUtil.White_King_Side_Rook_Square) {
+                        // white king side rook moved
                         board.castleMask = board.castleMask & (MoveUtil.Complete_Castle_Mask ^ MoveUtil.White_King_Side_Castle_Mask);
                     }
                     else if (move.startingSquare == MoveUtil.White_Queen_Side_Rook_Square) {
+                        // white queen side rook moved
                         board.castleMask = board.castleMask & (MoveUtil.Complete_Castle_Mask ^ MoveUtil.White_Queen_Side_Castle_Mask);
                     }
                 }
             } else if (!board.isWhiteToMove() && (board.castleMask & MoveUtil.Black_Castle_Mask) != 0) {
                 if (Pieces.isKing(startingPiece)) {
+                    // black king moved
                     board.castleMask &= MoveUtil.White_Castle_Mask;
                 }
                 else if (Pieces.isRook(startingPiece)) {
                     if (move.startingSquare == MoveUtil.Black_King_Side_Rook_Square) {
+                        // black king side rook moved
                         board.castleMask = board.castleMask & (MoveUtil.Complete_Castle_Mask ^ MoveUtil.Black_King_Side_Castle_Mask);
                     }
                     else if (move.startingSquare == MoveUtil.Black_Queen_Side_Rook_Square) {
+                        // black queen side rook moved
                         board.castleMask = board.castleMask & (MoveUtil.Complete_Castle_Mask ^ MoveUtil.Black_Queen_Side_Castle_Mask);
+                    }
+                }
+            }
+
+            // check if rook was captured
+            if (Pieces.isRook(targetPiece)) {
+                if (board.isWhiteToMove()) {
+                    if (move.targetSquare == MoveUtil.Black_King_Side_Rook_Square) {
+                        // king side black rook was captured
+                        board.castleMask = board.castleMask & (MoveUtil.Complete_Castle_Mask ^ MoveUtil.Black_King_Side_Castle_Mask);
+                    }
+                    else if (move.targetSquare == MoveUtil.Black_Queen_Side_Rook_Square) {
+                        // queen side black rook was captured
+                        board.castleMask = board.castleMask & (MoveUtil.Complete_Castle_Mask ^ MoveUtil.Black_Queen_Side_Castle_Mask);
+                    }
+                }
+                else {
+                    if (move.targetSquare == MoveUtil.White_King_Side_Rook_Square) {
+                        // king side white rook was captured
+                        board.castleMask = board.castleMask & (MoveUtil.Complete_Castle_Mask ^ MoveUtil.White_King_Side_Castle_Mask);
+                    }
+                    else if (move.targetSquare == MoveUtil.White_Queen_Side_Rook_Square) {
+                        // queen side white rook was captured
+                        board.castleMask = board.castleMask & (MoveUtil.Complete_Castle_Mask ^ MoveUtil.White_Queen_Side_Castle_Mask);
                     }
                 }
             }

@@ -88,4 +88,6 @@ public class Pieces {
     static boolean isQueen(int piece) {
         return (piece & 7) == Queen;
     }
+
+    static boolean isNone(int piece) { return (piece & 7) == None; }
 }
