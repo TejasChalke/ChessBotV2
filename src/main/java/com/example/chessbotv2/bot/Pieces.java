@@ -56,8 +56,8 @@ public class Pieces {
         return intToCharMap[piece];
     }
 
-    static boolean isSameColor(int piece, int coloredPiece) {
-        return (coloredPiece & BoardUtil.PlayerMask & piece) != 0;
+    static boolean isSameColor(int piece1, int piece2) {
+        return (BoardUtil.PlayerMask & piece1 & piece2) != 0;
     }
 
     static boolean isSlidingPiece(int piece) {

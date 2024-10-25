@@ -28,7 +28,7 @@ public class BotAPI {
             return ResponseEntity.ok("Bot is not initialized");
         }
 
-        bot.testMoves(depth, true);
+        bot.testMoves(depth, true, false, false);
         return ResponseEntity.ok("Board Set");
     }
 }

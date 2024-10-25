@@ -10,7 +10,7 @@ public class BoardUtil {
         }
 
         int file = squareStr.charAt(0) - 'a';
-        int rank = squareStr.charAt(1) - '0';
+        int rank = squareStr.charAt(1) - '1';
         return rank * 8 + file;
     }
 

@@ -50,9 +50,9 @@ public class MoveUtil {
 
             // compute indexes for king
             preComputedKingMoves[index] = new ArrayList<>();
-            for (int dir: slidingDirectionOffset) {
-                int nextIndex = index + dir;
-                if (nextIndex < 0 || nextIndex >= 64) continue;
+            for (int offset: slidingDirectionOffset) {
+                int nextIndex = index + offset;
+                if (nextIndex < 0 || nextIndex >= 64 || (file == 0 && (offset == 7 || offset == -9 || offset == -1)) || (file == 7 && (offset == 9 || offset == -7 || offset == 1))) continue;
                 preComputedKingMoves[index].add(nextIndex);
             }
 

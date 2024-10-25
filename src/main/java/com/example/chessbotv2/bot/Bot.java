@@ -8,14 +8,11 @@ public class Bot {
     MoveGenerator moveGenerator;
     Stack<BoardData> prevBoardState;
     int captures, castles, enPassants;
-
+    boolean changeStats;
     public Bot() {
         board = new Board();
         moveGenerator = new MoveGenerator(board);
         prevBoardState = new Stack<>();
-//        captures = checks = 0;
-//        moveGenerator.generateMoves();
-//        System.out.println("Number of moves for depth " + 3 + " are : " + getMoveCount(3));
     }
 
     public Bot(String fen) {
@@ -37,32 +34,53 @@ public class Bot {
         return null;
     }
 
-    public void testMoves(int depth, boolean rangeTest) {
+    public void testMoves(int depth, boolean rangeTest, boolean displayStats, boolean displayDetails) {
         for (int i=(rangeTest ? 1 : depth); i<=depth; i++) {
             castles = captures = enPassants = 0;
-            System.out.println("Number of moves for depth " + i + " are : " + getMoveCount(i) + " [Castles: " + castles + "], [Captures: " + captures + "], [EP: " + enPassants + "]");
+            changeStats = false;
+            System.out.println("Number of moves for depth " + i + " are : " + getMoveCount(i, displayStats, displayDetails) + " [Castles: " + castles + "], [Captures: " + captures + "], [EP: " + enPassants + "]");
         }
     }
 
-    public int getMoveCount(int depth) {
+    public void testAttackMask() {
+        moveGenerator.setAndDisplayAttackMask();
+    }
+
+    public void testPinned(int square) {
+        System.out.println("Is " + BoardUtil.getSquareName(square) + " pinned? " + moveGenerator.isPinned(square));
+    }
+
+    public void testMovingInPinDirection(int startSquare, int kingSquare, int targetSquare) {
+        System.out.println("Is moving in pin direction from " + BoardUtil.getSquareName(startSquare) + " when king at " + BoardUtil.getSquareName(kingSquare) + " to " + BoardUtil.getSquareName(targetSquare) + "? " + moveGenerator.isMovingInPinDirection(startSquare, kingSquare, targetSquare));
+    }
+
+    public int getMoveCount(int depth, boolean displayStats, boolean displayDetails) {
         if (depth == 0) return 1;
         ArrayList<Move> legalMoves = moveGenerator.generateMoves();
         int cnt = 0;
-        boolean displayStats = false;
         for (Move move: legalMoves) {
-            displayStats = move.isCastle;
             char currPiece = Pieces.getPiece(board.board[move.startingSquare]);
-            makeMove(move, true);
             if (displayStats) {
-                System.out.println("Piece: " + currPiece);
-                System.out.println("After making move " + (3-depth) + ": " + move);
+                if (displayDetails) {
+                    System.out.println("Piece: " + currPiece + ", EP pinned square: " + BoardUtil.getSquareName(moveGenerator.epPinnedSquare));
+                    System.out.println("Before making move : " + move);
+                    board.displayBoard();
+                }
+                changeStats = depth == 1;
+            }
+
+            makeMove(move, true);
+            if (displayStats && displayDetails) {
+                System.out.println("Make move " + (3-depth) + ": " + move);
                 board.displayBoard();
             }
-            cnt += getMoveCount(depth - 1);
+            cnt += getMoveCount(depth - 1, displayStats, displayDetails);
             unMakeMove(move);
-            if (displayStats) {
-                System.out.println("After resting move: ");
+
+            if (displayStats && displayDetails) {
+                System.out.println("Un-make move: ");
                 board.displayBoard();
+                System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
             }
         }
         return cnt;
@@ -78,13 +96,13 @@ public class Bot {
 
         // handle en passant captures
         if (move.isEnPassant) {
-            targetPiece = board.board[board.epSquare];
-            board.board[board.epSquare] = Pieces.None;
-            enPassants++;
+            targetPiece = board.board[board.epSquare + (board.isWhiteToMove() ? -8 : 8)];
+            board.board[board.epSquare + (board.isWhiteToMove() ? -8 : 8)] = Pieces.None;
+            if (changeStats) enPassants++;
         }
 
         // testing
-        if ((targetPiece & 7) != 0) captures++;
+        if (changeStats && (targetPiece & 7) != 0) captures++;
 
         if (storeState) {
             // store data to unmake move
@@ -100,7 +118,7 @@ public class Bot {
 
         // handle castling moves
         if (move.isCastle) {
-            castles++;
+            if (changeStats) castles++;
             if (board.isWhiteToMove()) {
                 if (move.targetSquare == MoveUtil.White_King_Start_Square + 2) {
                     // move the rook to the left of king
@@ -222,10 +240,10 @@ public class Bot {
     void unMakeMove(Move move) {
         BoardData boardData = prevBoardState.pop();
         if (boardData.targetPiece != Pieces.None) {
-//            captures++;
             if (move.isEnPassant) {
                 // en passant capture
-                board.board[boardData.epSquare] = boardData.targetPiece;
+                board.board[boardData.epSquare + (!board.isWhiteToMove() ? -8 : 8)] = boardData.targetPiece;
+                board.board[move.targetSquare] = Pieces.None;
             }
             else {
                 // normal capture, promotion capture
@@ -234,10 +252,6 @@ public class Bot {
         } else {
             board.board[move.targetSquare] = Pieces.None;
         }
-
-//        if (move.targetSquare == 24 && Pieces.isQueen(boardData.startingPiece) && board.board[51] == Pieces.None) checks++;
-//        if (move.targetSquare == 33 && Pieces.isBishop(boardData.startingPiece) && board.board[51] == Pieces.None) checks++;
-//        if (move.targetSquare == 39 && Pieces.isQueen(boardData.startingPiece) && board.board[53] == Pieces.None) checks++;
 
         // place the piece on its original square
         board.board[move.startingSquare] = boardData.startingPiece;

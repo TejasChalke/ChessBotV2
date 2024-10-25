@@ -32,7 +32,7 @@ public class Move {
 
     @Override
     public String toString() {
-        return "[" + startingSquare + " -> " + targetSquare + "] : " + getMoveType();
+        return "[" + BoardUtil.getSquareName(startingSquare) + " -> " + BoardUtil.getSquareName(targetSquare) + "] : " + getMoveType();
     }
 
     private String getMoveType() {

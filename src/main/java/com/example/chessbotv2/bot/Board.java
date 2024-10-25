@@ -98,11 +98,17 @@ public class Board {
 
     public void displayBoard() {
         for (int r=7; r>=0; r--) {
+            System.out.printf("%d ", (r+1));
             for(int c=0; c<8; c++) {
                 System.out.printf("%c ", Pieces.getPiece(board[r * 8 + c]));
             }
             System.out.println();
         }
+        System.out.printf("%c ", ' ');
+        for(int c=0; c<8; c++) {
+            System.out.printf("%c ", (char)('a' + c));
+        }
+        System.out.println();
         System.out.println("playerToMove: " + (playerToMove == 8 ? "White" : "Black"));
         System.out.println("CastleMask: " + Integer.toString(castleMask, 2));
         System.out.println("epSquare: " + epSquare + "(" + BoardUtil.getSquareName(epSquare) + ")");
