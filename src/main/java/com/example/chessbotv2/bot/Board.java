@@ -30,7 +30,7 @@ public class Board {
         playerToMove = Pieces.White;
         castleMask = 0;
         epSquare = -1;
-        fullMoveCounter = 0;
+        fullMoveCounter = 1;
         halfMoveClock = 0;
         isChecked = isDoubleChecked = false;
     }
@@ -84,8 +84,6 @@ public class Board {
         if (str.length > 5) {
             fullMoveCounter = Integer.parseInt(str[5]);
         }
-
-//        displayBoard();
     }
 
     public void resetBoard() {

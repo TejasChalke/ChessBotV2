@@ -17,16 +17,23 @@ public class MoveGenerator {
 
     public ArrayList<Move> generateMoves() {
         setAttackMask();
-        return getLegalMoves();
+        return getLegalMoves(false);
     }
 
-    private ArrayList<Move> getLegalMoves() {
+    public ArrayList<Move> generateMoves(boolean capturesOnly) {
+        setAttackMask();
+        return getLegalMoves(capturesOnly);
+    }
+
+    private ArrayList<Move> getLegalMoves(boolean capturesOnly) {
         ArrayList<Move> legalMoves = new ArrayList<>();
         // generate king moves first in case of double check to return early
         for (int targetSquare: MoveUtil.preComputedKingMoves[currentPlayerKingIndex]) {
             // square is not attacked by an enemy piece
             if (isNotAttacked(targetSquare) && !Pieces.isSameColor(board.board[currentPlayerKingIndex], board.board[targetSquare])) {
-                legalMoves.add(new Move(currentPlayerKingIndex, targetSquare, Move.NormalMove));
+                if (!capturesOnly || !Pieces.isNone(board.board[targetSquare])) {
+                    legalMoves.add(new Move(currentPlayerKingIndex, targetSquare, Move.NormalMove));
+                }
             }
         }
         if (board.isDoubleChecked) return legalMoves;
@@ -36,23 +43,25 @@ public class MoveGenerator {
         * the rook or king because if they have moved previously
         * right to castle will be lost any way
         * */
-        if (board.isWhiteToMove()) {
-            // king side castling
-            if (!board.isChecked && (board.castleMask & MoveUtil.White_King_Side_Castle_Mask) != 0 && board.board[MoveUtil.White_King_Start_Square + 1] == Pieces.None && board.board[MoveUtil.White_King_Start_Square + 2] == Pieces.None && isNotAttacked(MoveUtil.White_King_Start_Square + 1) && isNotAttacked(MoveUtil.White_King_Start_Square + 2)) {
-                legalMoves.add(new Move(currentPlayerKingIndex, currentPlayerKingIndex + 2, Move.Castle));
-            }
-            // queen side castling
-            if (!board.isChecked && (board.castleMask & MoveUtil.White_Queen_Side_Castle_Mask) != 0 && board.board[MoveUtil.White_King_Start_Square - 1] == Pieces.None && board.board[MoveUtil.White_King_Start_Square - 2] == Pieces.None && board.board[MoveUtil.White_King_Start_Square - 3] == Pieces.None && isNotAttacked(MoveUtil.White_King_Start_Square - 1) && isNotAttacked(MoveUtil.White_King_Start_Square - 2)) {
-                legalMoves.add(new Move(currentPlayerKingIndex, currentPlayerKingIndex - 2, Move.Castle));
-            }
-        } else {
-            // king side castling
-            if (!board.isChecked && (board.castleMask & MoveUtil.Black_King_Side_Castle_Mask) != 0 && board.board[MoveUtil.Black_King_Start_Square + 1] == Pieces.None && board.board[MoveUtil.Black_King_Start_Square + 2] == Pieces.None && isNotAttacked(MoveUtil.Black_King_Start_Square + 1) && isNotAttacked(MoveUtil.Black_King_Start_Square + 2)) {
-                legalMoves.add(new Move(currentPlayerKingIndex, currentPlayerKingIndex + 2, Move.Castle));
-            }
-            // queen side castling
-            if (!board.isChecked && (board.castleMask & MoveUtil.Black_Queen_Side_Castle_Mask) != 0 && board.board[MoveUtil.Black_King_Start_Square - 1] == Pieces.None && board.board[MoveUtil.Black_King_Start_Square - 2] == Pieces.None && board.board[MoveUtil.Black_King_Start_Square - 3] == Pieces.None && isNotAttacked(MoveUtil.Black_King_Start_Square - 1) && isNotAttacked(MoveUtil.Black_King_Start_Square - 2)) {
-                legalMoves.add(new Move(currentPlayerKingIndex, currentPlayerKingIndex - 2, Move.Castle));
+        if (!capturesOnly) {
+            if (board.isWhiteToMove()) {
+                // king side castling
+                if (!board.isChecked && (board.castleMask & MoveUtil.White_King_Side_Castle_Mask) != 0 && board.board[MoveUtil.White_King_Start_Square + 1] == Pieces.None && board.board[MoveUtil.White_King_Start_Square + 2] == Pieces.None && isNotAttacked(MoveUtil.White_King_Start_Square + 1) && isNotAttacked(MoveUtil.White_King_Start_Square + 2)) {
+                    legalMoves.add(new Move(currentPlayerKingIndex, currentPlayerKingIndex + 2, Move.Castle));
+                }
+                // queen side castling
+                if (!board.isChecked && (board.castleMask & MoveUtil.White_Queen_Side_Castle_Mask) != 0 && board.board[MoveUtil.White_King_Start_Square - 1] == Pieces.None && board.board[MoveUtil.White_King_Start_Square - 2] == Pieces.None && board.board[MoveUtil.White_King_Start_Square - 3] == Pieces.None && isNotAttacked(MoveUtil.White_King_Start_Square - 1) && isNotAttacked(MoveUtil.White_King_Start_Square - 2)) {
+                    legalMoves.add(new Move(currentPlayerKingIndex, currentPlayerKingIndex - 2, Move.Castle));
+                }
+            } else {
+                // king side castling
+                if (!board.isChecked && (board.castleMask & MoveUtil.Black_King_Side_Castle_Mask) != 0 && board.board[MoveUtil.Black_King_Start_Square + 1] == Pieces.None && board.board[MoveUtil.Black_King_Start_Square + 2] == Pieces.None && isNotAttacked(MoveUtil.Black_King_Start_Square + 1) && isNotAttacked(MoveUtil.Black_King_Start_Square + 2)) {
+                    legalMoves.add(new Move(currentPlayerKingIndex, currentPlayerKingIndex + 2, Move.Castle));
+                }
+                // queen side castling
+                if (!board.isChecked && (board.castleMask & MoveUtil.Black_Queen_Side_Castle_Mask) != 0 && board.board[MoveUtil.Black_King_Start_Square - 1] == Pieces.None && board.board[MoveUtil.Black_King_Start_Square - 2] == Pieces.None && board.board[MoveUtil.Black_King_Start_Square - 3] == Pieces.None && isNotAttacked(MoveUtil.Black_King_Start_Square - 1) && isNotAttacked(MoveUtil.Black_King_Start_Square - 2)) {
+                    legalMoves.add(new Move(currentPlayerKingIndex, currentPlayerKingIndex - 2, Move.Castle));
+                }
             }
         }
 
@@ -60,15 +69,15 @@ public class MoveGenerator {
             int piece = board.board[index];
             if (piece == Pieces.None || !Pieces.isSameColor(piece, board.playerToMove) || Pieces.isKing(piece)) continue;
 
-            if (Pieces.isSlidingPiece(piece)) generateSlidingMoves(piece, index, legalMoves);
-            else if(Pieces.isKnight(piece) && !isPinned(index)) generateKnightMoves(index, legalMoves);
-            else if(Pieces.isPawn(piece)) generatePawnMove(index, legalMoves);
+            if (Pieces.isSlidingPiece(piece)) generateSlidingMoves(piece, index, legalMoves, capturesOnly);
+            else if(Pieces.isKnight(piece) && !isPinned(index)) generateKnightMoves(index, legalMoves, capturesOnly);
+            else if(Pieces.isPawn(piece)) generatePawnMove(index, legalMoves, capturesOnly);
         }
 
         return legalMoves;
     }
 
-    private void generateSlidingMoves(int piece, int startingSquare, ArrayList<Move> legalMoves) {
+    private void generateSlidingMoves(int piece, int startingSquare, ArrayList<Move> legalMoves, boolean capturesOnly) {
         if (board.isChecked && isPinned(startingSquare)) return;
         int startIndex = Pieces.isBishop(piece) ? 4 : 0;
         int endIndex = Pieces.isRook(piece) ? 4 : 8;
@@ -84,6 +93,9 @@ public class MoveGenerator {
                     if (Pieces.isSameColor(piece, board.board[targetSquare])) break;
                 }
 
+                // generate captures moves and make an exception for checks
+                if (capturesOnly && Pieces.isNone(board.board[targetSquare])) continue;
+
                 if (notPinnedNotChecked || (isPinned(startingSquare) && isMovingInPinDirection(startingSquare, currentPlayerKingIndex, targetSquare))) {
                     // a sliding pinned piece can only move if,
                     // it is not a check and, it is moving in the direction of the pin
@@ -96,9 +108,12 @@ public class MoveGenerator {
         }
     }
 
-    private void generateKnightMoves(int startingSquare, ArrayList<Move> legalMoves) {
+    private void generateKnightMoves(int startingSquare, ArrayList<Move> legalMoves, boolean capturesOnly) {
         for (int targetSquare: MoveUtil.preComputedKnightMoves[startingSquare]) {
             if (!board.isChecked || isBlockingCheck(targetSquare)) {
+                // generate captures moves and make an exception for checks
+                if (capturesOnly && Pieces.isNone(board.board[targetSquare])) continue;
+
                 if (!Pieces.isSameColor(board.board[startingSquare], board.board[targetSquare])) {
                     legalMoves.add(new Move(startingSquare, targetSquare, Move.NormalMove));
                 }
@@ -106,7 +121,7 @@ public class MoveGenerator {
         }
     }
 
-    private void generatePawnMove(int startingSquare, ArrayList<Move> legalMoves) {
+    private void generatePawnMove(int startingSquare, ArrayList<Move> legalMoves, boolean capturesOnly) {
         int rank = startingSquare / 8;
         int file = startingSquare % 8;
         int delta = 0;
@@ -114,8 +129,8 @@ public class MoveGenerator {
 
         // one move ahead
         delta = board.isWhiteToMove() ? 8 : -8;
-        if (board.board[startingSquare + delta] == Pieces.None && (!board.isChecked || isBlockingCheck(startingSquare + delta)) && (!isPinned(startingSquare) || isMovingInPinDirection(startingSquare, currentPlayerKingIndex, startingSquare + delta))) {
-            if ((board.isWhiteToMove() && rank < 6) || (!board.isWhiteToMove() && rank > 1)) {
+        if (!capturesOnly && board.board[startingSquare + delta] == Pieces.None && (!board.isChecked || isBlockingCheck(startingSquare + delta)) && (!isPinned(startingSquare) || isMovingInPinDirection(startingSquare, currentPlayerKingIndex, startingSquare + delta))) {
+            if (((board.isWhiteToMove() && rank < 6) || (!board.isWhiteToMove() && rank > 1))) {
                 legalMoves.add(new Move(startingSquare, startingSquare + delta, Move.NormalMove));
             }
             else {
@@ -130,7 +145,7 @@ public class MoveGenerator {
         // two move ahead
         delta = board.isWhiteToMove() ? 16 : -16;
         rankToCheck = board.isWhiteToMove() ? 1 : 6;
-        if (rank == rankToCheck && board.board[startingSquare + delta / 2] == Pieces.None && board.board[startingSquare + delta] == Pieces.None && (!board.isChecked || isBlockingCheck(startingSquare + delta)) && (!isPinned(startingSquare) || isMovingInPinDirection(startingSquare, currentPlayerKingIndex, startingSquare + delta))) {
+        if (!capturesOnly && rank == rankToCheck && board.board[startingSquare + delta / 2] == Pieces.None && board.board[startingSquare + delta] == Pieces.None && (!board.isChecked || isBlockingCheck(startingSquare + delta)) && (!isPinned(startingSquare) || isMovingInPinDirection(startingSquare, currentPlayerKingIndex, startingSquare + delta))) {
             legalMoves.add(new Move(startingSquare, startingSquare + delta, Move.TwoAhead));
         }
 

@@ -1,11 +1,12 @@
 package com.example.chessbotv2.bot;
 
 import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Stack;
+import java.util.*;
 
 public class Bot {
+    final int MIN_VAL = -999999;
+    final int MAX_VAL = 999999;
+
     public Board board;
     MoveGenerator moveGenerator;
     Evaluator evaluator;
@@ -13,6 +14,7 @@ public class Bot {
     int captures, castles, enPassants, promotions;
     boolean changeStats;
     Move bestMove;
+    HashMap<String, Integer> moveCnt;
     public Bot() {
         board = new Board();
         init(board);
@@ -27,6 +29,7 @@ public class Bot {
         evaluator = new Evaluator(board);
         moveGenerator = new MoveGenerator(board);
         prevBoardState = new Stack<>();
+        moveCnt = new HashMap<>();
     }
 
     public void resetBoard() {
@@ -36,7 +39,9 @@ public class Bot {
 
     public Move playMove() {
         // find best move
+        System.out.println("Looking for move....");
         findBestMove();
+        System.out.println("Search ended: " + bestMove);
         // make the move
         if (bestMove != null && bestMove.startingSquare != -1 && bestMove.startingSquare != 64) {
             makeMove(bestMove, false);
@@ -47,7 +52,7 @@ public class Bot {
 
     public void findBestMove() {
         bestMove = null;
-        int score = Search(4, true);
+        int score = search(4, MIN_VAL, MAX_VAL, true);
         if (bestMove == null) {
             if (score == 0) {
                 // stalemate
@@ -60,48 +65,85 @@ public class Bot {
         }
     }
 
-    public int Search(int depth, boolean isRoot) {
+    public int search(int depth, int alpha, int beta, boolean isRoot) {
         if (depth == 0) {
-            return evaluator.evaluate();
+            return searchQuietPosition(alpha, beta);
+//            return evaluator.evaluate();
         }
 
-        int currentBestScore = Integer.MIN_VALUE;
         ArrayList<Move> legalMoves = moveGenerator.generateMoves();
-        arrangeMoves(legalMoves);
+//        String currentPos = Arrays.toString(board.board);
+//        int currentPosCount = moveCnt.getOrDefault(currentPos, 0);
 
         if (legalMoves.isEmpty()) {
-            return board.isChecked ? Integer.MIN_VALUE : 0;
+            return board.isChecked ? MIN_VAL : 0;
         }
         if (board.halfMoveClock >= 50 || board.fullMoveCounter >= 100) {
             // draw
             // TODO: add proper checks for draw
             return 0;
         }
+//        moveCnt.put(currentPos, currentPosCount + 1);
 
+        arrangeMoves(legalMoves);
         for (Move move: legalMoves) {
             makeMove(move, true);
-            int currentScore = -Search(depth - 1, false);
+            int eval = -search(depth - 1, -beta, -alpha, false);
             unMakeMove(move);
-            if (currentBestScore < currentScore) {
-                currentBestScore = currentScore;
+
+            if (eval >= beta && !isRoot) {
+                return beta;
+            }
+            if (eval > alpha || (isRoot && bestMove == null)) {
+                alpha = eval;
                 if (isRoot) bestMove = move;
             }
         }
-        return currentBestScore;
+
+//        moveCnt.put(currentPos, currentPosCount - 1);
+        return alpha;
+    }
+
+    public int searchQuietPosition(int alpha, int beta) {
+        int eval = evaluator.evaluate();
+        if (eval >= beta && eval != Integer.MAX_VALUE - 1) {
+            return beta;
+        }
+        alpha = Math.max(alpha, eval);
+
+        ArrayList<Move> legalMoves = moveGenerator.generateMoves(true);
+        if (board.halfMoveClock >= 50 || board.fullMoveCounter >= 100) {
+            // draw
+            // TODO: add proper checks for draw
+            return 0;
+        }
+
+        arrangeMoves(legalMoves);
+        for (Move move: legalMoves) {
+            makeMove(move, true);
+            eval = -searchQuietPosition(-beta, -alpha);
+            unMakeMove(move);
+
+            if (eval >= beta) {
+                return beta;
+            }
+            alpha = Math.max(eval, alpha);
+        }
+        return alpha;
     }
 
     void arrangeMoves(ArrayList<Move> legalMoves) {
         Collections.sort(legalMoves, (a, b) -> {
             int moveScoreA = 0, moveScoreB = 0;
             if (Pieces.isNone(board.board[a.targetSquare])){
-                if (a.isEnPassant) moveScoreA += 50;
+                if (a.isEnPassant) moveScoreA += 100;
             }
             else {
                 moveScoreA += evaluator.getCaptureValue(board.board[a.startingSquare], board.board[a.targetSquare]);
             }
 
             if (Pieces.isNone(board.board[b.targetSquare])){
-                if (b.isEnPassant) moveScoreB += 50;
+                if (b.isEnPassant) moveScoreB += 100;
             }
             else {
                 moveScoreB += evaluator.getCaptureValue(board.board[b.startingSquare], board.board[b.targetSquare]);
@@ -110,11 +152,14 @@ public class Bot {
             if (a.isPromoteToQueen) moveScoreA += 900;
             else if (a.isPromoteToRook) moveScoreA += 500;
             else if (a.isPromoteToBishop || a.isPromoteToKnight) moveScoreA += 300;
+            else if (a.isCastle) moveScoreA += 500;
 
             if (b.isPromoteToQueen) moveScoreB += 900;
             else if (b.isPromoteToRook) moveScoreB += 500;
             else if (b.isPromoteToBishop || b.isPromoteToKnight) moveScoreB += 300;
-            return Integer.compare(moveScoreA, moveScoreB);
+            else if (b.isCastle) moveScoreB += 500;
+
+            return Integer.compare(moveScoreB, moveScoreA);
         });
     }
 

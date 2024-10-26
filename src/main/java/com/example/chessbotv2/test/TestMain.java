@@ -6,7 +6,7 @@ import com.example.chessbotv2.bot.Move;
 public class TestMain {
     public static void main(String[] args) {
         // test a match between 2 bots
-        testMatch();
+//        testMatch();
 
         // default starting position
 //        testBot("Default position test", "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", false, -1, -1, -1, -1, 4, true);
@@ -31,6 +31,9 @@ public class TestMain {
 
         // pawn next to ep pawn
 //        testBot("Pawn next to EP pawn test", "8/8/8/KPpp3r/5pk1/1R6/4P1P1/8 w - c6 0 1", true, -1, -1, -1, -1, 1, false);
+
+        // check for stalemate
+        testBot("Checkmate stalemate test test", "6k1/3Q4/5R2/4K3/8/8/8/8 w - -", true, -1, -1, -1, -1, 1, false);
     }
 
     public static void testBot(String testName, String fen, boolean testAttackMask, int pinSquare, int startSquare, int kingSquare, int targetSquare, int depth, boolean rangeTest) {

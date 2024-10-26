@@ -45,7 +45,7 @@ public class BotAPI {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         if (mode.equals("BotTest")) {
-            bot = new Bot();
+            bot = new Bot("r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10");
             MatchStartData data = new MatchStartData(bot.board.board, true);
             return new ResponseEntity<>(data, HttpStatus.OK);
         }
