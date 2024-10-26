@@ -1,34 +1,53 @@
 package com.example.chessbotv2.api;
 
 import com.example.chessbotv2.bot.Bot;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @CrossOrigin("*")
-@RestController("/v2")
+@RestController
+@RequestMapping("/v2")
 public class BotAPI {
-    Bot bot;
-    @GetMapping({"/setBoard", "/setBoard/{fen}"})
-    private ResponseEntity<String> setBoard(@PathVariable(required = false) String fen) {
-        if (this.bot == null) {
-            bot = fen == null || fen.isEmpty() ? new Bot() : new Bot(fen);
-        } else {
-            bot.resetBoard();
+    static public class MatchStartData {
+        @JsonProperty
+        private int[] board;
+        @JsonProperty
+        private boolean whiteToMove;
+        @JsonProperty
+        private int epSquare;
+
+        public MatchStartData(int[] board, int epSquare, boolean whiteToMove) {
+            this.board = board;
+            this.whiteToMove = whiteToMove;
+            this.epSquare = epSquare;
         }
 
-        return ResponseEntity.ok("Board Set");
+        public int[] getBoard() {
+            return board;
+        }
+
+        public boolean isWhiteToMove() {
+            return whiteToMove;
+        }
+
+        public int getEpSquare() {
+            return epSquare;
+        }
     }
 
-    @GetMapping("/testMoves/{depth}")
-    private ResponseEntity<String> testMoves(@PathVariable int depth) {
-        if (this.bot == null) {
-            return ResponseEntity.ok("Bot is not initialized");
+    Bot bot;
+
+    @GetMapping("/startMatch")
+    public ResponseEntity<MatchStartData> startMatch(@RequestParam String mode) {
+        if (mode == null) {
+            System.err.println("A mode must be provided to start a match");
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
-        bot.testMoves(depth, true, false, false);
-        return ResponseEntity.ok("Board Set");
+        bot = new Bot();
+        MatchStartData data = new MatchStartData(bot.board.board, bot.board.epSquare, true);
+        return new ResponseEntity<>(data, HttpStatus.OK);
     }
 }

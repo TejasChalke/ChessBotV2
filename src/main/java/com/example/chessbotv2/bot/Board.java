@@ -4,19 +4,19 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class Board {
-    int[] board;
+    public int[] board;
     int[] kingIndex; // 0 -> white, 1 -> black
     int playerToMove;
     int castleMask;
-    int epSquare;
+    public int epSquare;
     int halfMoveClock;
     int fullMoveCounter;
     boolean isChecked;
     boolean isDoubleChecked;
+
     public Board() {
         init();
         setUpBoard(BoardUtil.DefaultFEN);
-//        setUpBoard("rnbqkbnr/p1pppppp/1p6/8/8/5P2/PPPPP1PP/RNBQKBNR w KQkq - 0 1");
     }
 
     public Board(String fen) {
@@ -49,8 +49,9 @@ public class Board {
                 file += c - '0';
             } else {
                 board[rank * 8 + file] = Pieces.getPiece(c);
-                if (c == 'K') kingIndex[0] = rank * 8 + file;
-                else if (c == 'k') kingIndex[1] = rank * 8 + file;
+                int square = rank * 8 + file;
+                if (c == 'K') kingIndex[0] = square;
+                else if (c == 'k') kingIndex[1] = square;
                 file++;
             }
         }
@@ -84,7 +85,7 @@ public class Board {
             fullMoveCounter = Integer.parseInt(str[5]);
         }
 
-        displayBoard();
+//        displayBoard();
     }
 
     public void resetBoard() {

@@ -90,4 +90,6 @@ public class Pieces {
     }
 
     static boolean isNone(int piece) { return (piece & 7) == None; }
+    static boolean isWhite(int piece) { return (piece & BoardUtil.PlayerMask) == White; }
+
 }

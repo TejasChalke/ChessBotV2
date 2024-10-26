@@ -1,8 +1,8 @@
 package com.example.chessbotv2.bot;
 
 public class Move {
-    int startingSquare;
-    int targetSquare;
+    public int startingSquare;
+    public int targetSquare;
     boolean isEnPassant;
     boolean isCastle;
     boolean isTwoAhead;

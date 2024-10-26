@@ -1,6 +1,8 @@
 package com.example.chessbotv2.bot;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Collections;
 
 public class MoveGenerator {
     Board board;
@@ -14,7 +16,6 @@ public class MoveGenerator {
     }
 
     public ArrayList<Move> generateMoves() {
-        // get the attack mask
         setAttackMask();
         return getLegalMoves();
     }
@@ -55,19 +56,15 @@ public class MoveGenerator {
             }
         }
 
-//        System.out.println(currentPlayerKingIndex + " -> " + Pieces.getPiece(board.board[currentPlayerKingIndex]) + " : ");
-//        for (Move move: legalMoves) System.out.println(move);
         for (int index=0; index<64; index++) {
             int piece = board.board[index];
             if (piece == Pieces.None || !Pieces.isSameColor(piece, board.playerToMove) || Pieces.isKing(piece)) continue;
 
-//            int prevSize = legalMoves.size();
             if (Pieces.isSlidingPiece(piece)) generateSlidingMoves(piece, index, legalMoves);
             else if(Pieces.isKnight(piece) && !isPinned(index)) generateKnightMoves(index, legalMoves);
             else if(Pieces.isPawn(piece)) generatePawnMove(index, legalMoves);
-//            System.out.println(index + " -> " + Pieces.getPiece(piece) + " : ");
-//            for (int i=prevSize; i<legalMoves.size(); i++) System.out.println(legalMoves.get(i));
         }
+
         return legalMoves;
     }
 

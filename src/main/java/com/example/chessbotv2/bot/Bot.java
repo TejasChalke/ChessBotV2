@@ -1,22 +1,30 @@
 package com.example.chessbotv2.bot;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Stack;
 
 public class Bot {
     public Board board;
     MoveGenerator moveGenerator;
+    Evaluator evaluator;
     Stack<BoardData> prevBoardState;
-    int captures, castles, enPassants;
+    int captures, castles, enPassants, promotions;
     boolean changeStats;
+    Move bestMove;
     public Bot() {
         board = new Board();
-        moveGenerator = new MoveGenerator(board);
-        prevBoardState = new Stack<>();
+        init(board);
     }
 
     public Bot(String fen) {
         board = new Board(fen);
+        init(board);
+    }
+
+    void init(Board board) {
+        evaluator = new Evaluator(board);
         moveGenerator = new MoveGenerator(board);
         prevBoardState = new Stack<>();
     }
@@ -27,18 +35,88 @@ public class Bot {
     }
 
     public Move playMove() {
-        // generate legal moves
         // find best move
+        findBestMove();
         // make the move
+        if (bestMove != null && bestMove.startingSquare != -1 && bestMove.startingSquare != 64) {
+            makeMove(bestMove, false);
+        }
         // return the move
-        return null;
+        return bestMove;
+    }
+
+    public void findBestMove() {
+        bestMove = null;
+        int score = Search(4, true);
+        if (bestMove == null) {
+            if (score == 0) {
+                // stalemate
+                bestMove = new Move(-1, -1, Move.NormalMove);
+            }
+            else {
+                // checkmate
+                bestMove = new Move(64, 64, Move.NormalMove);
+            }
+        }
+    }
+
+    public int Search(int depth, boolean isRoot) {
+        if (depth == 0) {
+            return evaluator.evaluate();
+        }
+
+        int currentBestScore = Integer.MIN_VALUE;
+        ArrayList<Move> legalMoves = moveGenerator.generateMoves();
+        arrangeMoves(legalMoves);
+
+        if (legalMoves.isEmpty()) {
+            return board.isChecked ? Integer.MIN_VALUE : 0;
+        }
+        for (Move move: legalMoves) {
+            makeMove(move, true);
+            int currentScore = -Search(depth - 1, false);
+            unMakeMove(move);
+            if (currentBestScore < currentScore) {
+                currentBestScore = currentScore;
+                if (isRoot) bestMove = move;
+            }
+        }
+        return currentBestScore;
+    }
+
+    void arrangeMoves(ArrayList<Move> legalMoves) {
+        Collections.sort(legalMoves, (a, b) -> {
+            int moveScoreA = 0, moveScoreB = 0;
+            if (Pieces.isNone(board.board[a.targetSquare])){
+                if (a.isEnPassant) moveScoreA += 50;
+            }
+            else {
+                moveScoreA += evaluator.getCaptureValue(board.board[a.startingSquare], board.board[a.targetSquare]);
+            }
+
+            if (Pieces.isNone(board.board[b.targetSquare])){
+                if (b.isEnPassant) moveScoreB += 50;
+            }
+            else {
+                moveScoreB += evaluator.getCaptureValue(board.board[b.startingSquare], board.board[b.targetSquare]);
+            }
+
+            if (a.isPromoteToQueen) moveScoreA += 900;
+            else if (a.isPromoteToRook) moveScoreA += 500;
+            else if (a.isPromoteToBishop || a.isPromoteToKnight) moveScoreA += 300;
+
+            if (b.isPromoteToQueen) moveScoreB += 900;
+            else if (b.isPromoteToRook) moveScoreB += 500;
+            else if (b.isPromoteToBishop || b.isPromoteToKnight) moveScoreB += 300;
+            return Integer.compare(moveScoreA, moveScoreB);
+        });
     }
 
     public void testMoves(int depth, boolean rangeTest, boolean displayStats, boolean displayDetails) {
         for (int i=(rangeTest ? 1 : depth); i<=depth; i++) {
-            castles = captures = enPassants = 0;
+            castles = captures = enPassants = promotions = 0;
             changeStats = false;
-            System.out.println("Number of moves for depth " + i + " are : " + getMoveCount(i, displayStats, displayDetails) + " [Castles: " + castles + "], [Captures: " + captures + "], [EP: " + enPassants + "]");
+            System.out.println("Number of moves for depth " + i + " are : " + getMoveCount(i, displayStats, displayDetails) + " [Castles: " + castles + "], [Captures: " + captures + "], [EP: " + enPassants + "], [Promotions: " + promotions + "]");
         }
     }
 
@@ -230,6 +308,7 @@ public class Bot {
         }
         // update the piece
         if (pieceMask != Pieces.None) {
+            if (changeStats) promotions++;
             board.board[move.targetSquare] = colorMask | pieceMask;
         }
 
