@@ -1,6 +1,7 @@
 package com.example.chessbotv2.api;
 
 import com.example.chessbotv2.bot.Bot;
+import com.example.chessbotv2.bot.Move;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,28 +13,26 @@ import org.springframework.web.bind.annotation.*;
 public class BotAPI {
     static public class MatchStartData {
         @JsonProperty
-        private int[] board;
+        private String board;
         @JsonProperty
         private boolean whiteToMove;
-        @JsonProperty
-        private int epSquare;
 
-        public MatchStartData(int[] board, int epSquare, boolean whiteToMove) {
-            this.board = board;
+        public MatchStartData(int[] board, boolean whiteToMove) {
+            StringBuilder sb = new StringBuilder();
+            for(int i=0; i<64; i++) {
+                sb.append(board[i]);
+                if (i < 63) sb.append('.');
+            }
+            this.board = sb.toString();
             this.whiteToMove = whiteToMove;
-            this.epSquare = epSquare;
         }
 
-        public int[] getBoard() {
+        public String getBoard() {
             return board;
         }
 
         public boolean isWhiteToMove() {
             return whiteToMove;
-        }
-
-        public int getEpSquare() {
-            return epSquare;
         }
     }
 
@@ -45,9 +44,21 @@ public class BotAPI {
             System.err.println("A mode must be provided to start a match");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
+        if (mode.equals("BotTest")) {
+            bot = new Bot();
+            MatchStartData data = new MatchStartData(bot.board.board, true);
+            return new ResponseEntity<>(data, HttpStatus.OK);
+        }
+        return null;
+    }
 
-        bot = new Bot();
-        MatchStartData data = new MatchStartData(bot.board.board, bot.board.epSquare, true);
-        return new ResponseEntity<>(data, HttpStatus.OK);
+    @GetMapping("/playMove")
+    public ResponseEntity<Move> playMove() {
+        if (bot == null) {
+            System.err.println("Bot does not exist to play the move");
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        Move move = bot.playMove();
+        return new ResponseEntity<>(move, HttpStatus.OK);
     }
 }

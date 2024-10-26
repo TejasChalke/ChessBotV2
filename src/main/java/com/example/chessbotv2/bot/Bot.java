@@ -72,6 +72,12 @@ public class Bot {
         if (legalMoves.isEmpty()) {
             return board.isChecked ? Integer.MIN_VALUE : 0;
         }
+        if (board.halfMoveClock >= 50 || board.fullMoveCounter >= 100) {
+            // draw
+            // TODO: add proper checks for draw
+            return 0;
+        }
+
         for (Move move: legalMoves) {
             makeMove(move, true);
             int currentScore = -Search(depth - 1, false);
@@ -185,6 +191,16 @@ public class Bot {
         if (storeState) {
             // store data to unmake move
             prevBoardState.push(new BoardData(board.kingIndex.clone(), board.castleMask, board.epSquare, board.halfMoveClock, board.fullMoveCounter, board.isChecked, board.isDoubleChecked, startingPiece, targetPiece));
+        }
+
+        if (Pieces.isPawn(startingPiece) || move.isEnPassant || !Pieces.isNone(targetPiece)) {
+            board.halfMoveClock = 0;
+        }
+        else {
+            board.halfMoveClock++;
+        }
+        if (!board.isWhiteToMove()) {
+            board.fullMoveCounter++;
         }
 
         // handle two square ahead
