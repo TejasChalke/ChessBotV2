@@ -6,7 +6,7 @@ import java.util.*;
 public class Bot {
     final int MIN_VAL = -999999;
     final int MAX_VAL = 999999;
-
+    final int CHECK_MATE = 100000;
     public Board board;
     MoveGenerator moveGenerator;
     Evaluator evaluator;
@@ -15,6 +15,7 @@ public class Bot {
     boolean changeStats;
     Move bestMove;
     HashMap<String, Integer> moveCnt;
+
     public Bot() {
         board = new Board();
         init(board);
@@ -52,7 +53,7 @@ public class Bot {
 
     public void findBestMove() {
         bestMove = null;
-        int score = search(4, MIN_VAL, MAX_VAL, true);
+        int score = search(4, 0, MIN_VAL, MAX_VAL);
         if (bestMove == null) {
             if (score == 0) {
                 // stalemate
@@ -65,60 +66,67 @@ public class Bot {
         }
     }
 
-    public int search(int depth, int alpha, int beta, boolean isRoot) {
+    public int search(int depth, int movesFromRoot, int alpha, int beta) {
         if (depth == 0) {
             return searchQuietPosition(alpha, beta);
 //            return evaluator.evaluate();
         }
 
-        ArrayList<Move> legalMoves = moveGenerator.generateMoves();
-//        String currentPos = Arrays.toString(board.board);
-//        int currentPosCount = moveCnt.getOrDefault(currentPos, 0);
+        if (movesFromRoot > 0) {
+            alpha = Math.max(alpha, -CHECK_MATE + movesFromRoot);
+            beta = Math.min(beta, CHECK_MATE - movesFromRoot);
+            if (alpha >= beta) {
+                return alpha;
+            }
+        }
+
+        String currentPos = Arrays.toString(board.board);
+        int currentPosCount = moveCnt.getOrDefault(currentPos, 0);
+        ArrayList<Move> legalMoves = currentPosCount == 3 ? new ArrayList<>() : moveGenerator.generateMoves();
 
         if (legalMoves.isEmpty()) {
-            return board.isChecked ? MIN_VAL : 0;
+            // TODO: add proper checks for draw, handled in move generator
+            return board.isChecked ? -(CHECK_MATE - movesFromRoot) : 0;
         }
-        if (board.halfMoveClock >= 50 || board.fullMoveCounter >= 100) {
-            // draw
-            // TODO: add proper checks for draw
-            return 0;
-        }
-//        moveCnt.put(currentPos, currentPosCount + 1);
 
-        arrangeMoves(legalMoves);
+        HashSet<Integer> kingCheckIndexes = moveGenerator.getPossibleCheckSquares(board.kingIndex[board.isWhiteToMove() ? 1 : 0], (board.isWhiteToMove() ? Pieces.Black : Pieces.White) | Pieces.King);
+        arrangeMoves(legalMoves, kingCheckIndexes);
         for (Move move: legalMoves) {
+            StringBuilder sb = new StringBuilder();
+            if (movesFromRoot == 0) {
+                sb.append("Move played : ").append(move);
+            }
             makeMove(move, true);
-            int eval = -search(depth - 1, -beta, -alpha, false);
+            int eval = -search(depth - 1, movesFromRoot + 1, -beta, -alpha);
             unMakeMove(move);
+            if (movesFromRoot == 0) {
+                sb.append(" with eval ").append(eval);
+                System.out.println(sb.toString());
+            }
 
-            if (eval >= beta && !isRoot) {
+            if (eval >= beta) {
                 return beta;
             }
-            if (eval > alpha || (isRoot && bestMove == null)) {
+            if (eval > alpha) {
                 alpha = eval;
-                if (isRoot) bestMove = move;
+                if (movesFromRoot == 0) bestMove = move;
             }
         }
 
-//        moveCnt.put(currentPos, currentPosCount - 1);
         return alpha;
     }
 
     public int searchQuietPosition(int alpha, int beta) {
         int eval = evaluator.evaluate();
-        if (eval >= beta && eval != Integer.MAX_VALUE - 1) {
+        if (eval >= beta) {
             return beta;
         }
         alpha = Math.max(alpha, eval);
 
         ArrayList<Move> legalMoves = moveGenerator.generateMoves(true);
-        if (board.halfMoveClock >= 50 || board.fullMoveCounter >= 100) {
-            // draw
-            // TODO: add proper checks for draw
-            return 0;
-        }
+        HashSet<Integer> kingCheckIndexes = moveGenerator.getPossibleCheckSquares(board.kingIndex[board.isWhiteToMove() ? 1 : 0], (board.isWhiteToMove() ? Pieces.Black : Pieces.White) | Pieces.King);
+        arrangeMoves(legalMoves, kingCheckIndexes);
 
-        arrangeMoves(legalMoves);
         for (Move move: legalMoves) {
             makeMove(move, true);
             eval = -searchQuietPosition(-beta, -alpha);
@@ -132,7 +140,7 @@ public class Bot {
         return alpha;
     }
 
-    void arrangeMoves(ArrayList<Move> legalMoves) {
+    void arrangeMoves(ArrayList<Move> legalMoves, HashSet<Integer> kingCheckIndexes) {
         Collections.sort(legalMoves, (a, b) -> {
             int moveScoreA = 0, moveScoreB = 0;
             if (Pieces.isNone(board.board[a.targetSquare])){
@@ -158,6 +166,14 @@ public class Bot {
             else if (b.isPromoteToRook) moveScoreB += 500;
             else if (b.isPromoteToBishop || b.isPromoteToKnight) moveScoreB += 300;
             else if (b.isCastle) moveScoreB += 500;
+
+            // move places piece next to pawn
+            moveScoreA -= evaluator.getPawnAttackedPenalty(board.board[a.startingSquare], a);
+            moveScoreB -= evaluator.getPawnAttackedPenalty(board.board[b.startingSquare], b);
+
+            // if will check
+            if (kingCheckIndexes.contains(a.targetSquare)) moveScoreA += 900;
+            if (kingCheckIndexes.contains(b.targetSquare)) moveScoreB += 900;
 
             return Integer.compare(moveScoreB, moveScoreA);
         });
@@ -236,6 +252,11 @@ public class Bot {
         if (storeState) {
             // store data to unmake move
             prevBoardState.push(new BoardData(board.kingIndex.clone(), board.castleMask, board.epSquare, board.halfMoveClock, board.fullMoveCounter, board.isChecked, board.isDoubleChecked, startingPiece, targetPiece));
+        }
+
+        // used for draw condition when only kings are left
+        if (!Pieces.isNone(targetPiece)) {
+            board.pieceCount[board.isWhiteToMove() ? 1 : 0]--;
         }
 
         if (Pieces.isPawn(startingPiece) || move.isEnPassant || !Pieces.isNone(targetPiece)) {
@@ -375,9 +396,17 @@ public class Bot {
 
         // flip the turn
         board.playerToMove ^= BoardUtil.PlayerMask;
+
+        String currentPos = Arrays.toString(board.board);
+        int currentPosCount = moveCnt.getOrDefault(currentPos, 0);
+        moveCnt.put(currentPos, currentPosCount + 1);
     }
 
     void unMakeMove(Move move) {
+        String currentPos = Arrays.toString(board.board);
+        int currentPosCount = moveCnt.getOrDefault(currentPos, 0);
+        moveCnt.put(currentPos, currentPosCount - 1);
+
         BoardData boardData = prevBoardState.pop();
         if (boardData.targetPiece != Pieces.None) {
             if (move.isEnPassant) {
@@ -389,6 +418,8 @@ public class Bot {
                 // normal capture, promotion capture
                 board.board[move.targetSquare] = boardData.targetPiece;
             }
+
+            board.pieceCount[board.isWhiteToMove() ? 0 : 1]++;
         } else {
             board.board[move.targetSquare] = Pieces.None;
         }

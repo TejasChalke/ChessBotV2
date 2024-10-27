@@ -1,7 +1,7 @@
 package com.example.chessbotv2.bot;
 
 public class BoardUtil {
-    static final String DefaultFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    public static final String DefaultFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     static final int PlayerMask = 24; // 11000
 
     static int getSquareIndex(String squareStr) throws Exception {

@@ -3,6 +3,7 @@ package com.example.chessbotv2.bot;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 
 public class MoveGenerator {
     Board board;
@@ -27,6 +28,9 @@ public class MoveGenerator {
 
     private ArrayList<Move> getLegalMoves(boolean capturesOnly) {
         ArrayList<Move> legalMoves = new ArrayList<>();
+        // draw condition
+        if ((board.pieceCount[0] == 1 && board.pieceCount[1] == 1) || board.halfMoveClock >= 50 || board.fullMoveCounter >= 100) return legalMoves;
+
         // generate king moves first in case of double check to return early
         for (int targetSquare: MoveUtil.preComputedKingMoves[currentPlayerKingIndex]) {
             // square is not attacked by an enemy piece
@@ -229,6 +233,34 @@ public class MoveGenerator {
 
     private boolean isBlockingCheck(int index) {
         return (checkMask & (1L << index)) != 0;
+    }
+
+    public HashSet<Integer> getPossibleCheckSquares(int startingSquare, int king) {
+        HashSet<Integer> indexes = new HashSet<>();
+        for (int d = 0; d < 8; d++) {
+            int offSet = MoveUtil.slidingDirectionOffset[d];
+
+            for (int i = 1; i <= MoveUtil.preComputedSlidingDistance[startingSquare][d]; i++) {
+                int targetSquare = startingSquare + offSet * i;
+                if (Pieces.isNone(board.board[targetSquare])) continue;
+                int piece = board.board[targetSquare];
+                if (Pieces.isSameColor(king, piece)) {
+                    indexes.add(targetSquare);
+                    break;
+                }
+                else if (!Pieces.isSameColor(king, piece) && (Pieces.isQueen(piece)) || (Pieces.isRook(piece) && d > 3) || (Pieces.isBishop(piece) && d < 4) || (i == 1 && d < 4 && Pieces.isPawn(piece))) {
+                    indexes.add(targetSquare);
+                    break;
+                }
+            }
+        }
+
+        for (int targetSquare: MoveUtil.preComputedKnightMoves[startingSquare]) {
+            if (!Pieces.isSameColor(king, board.board[targetSquare]) && Pieces.isKnight(board.board[targetSquare])) {
+                indexes.add(targetSquare);
+            }
+        }
+        return indexes;
     }
 
     private void setAttackMask() {

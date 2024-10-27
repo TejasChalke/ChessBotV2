@@ -6,6 +6,7 @@ import java.util.Arrays;
 public class Board {
     public int[] board;
     int[] kingIndex; // 0 -> white, 1 -> black
+    int[] pieceCount;
     int playerToMove;
     int castleMask;
     public int epSquare;
@@ -27,6 +28,7 @@ public class Board {
     private void init() {
         board = new int[64];
         kingIndex = new int[2];
+        pieceCount = new int[2];
         playerToMove = Pieces.White;
         castleMask = 0;
         epSquare = -1;
@@ -52,6 +54,8 @@ public class Board {
                 int square = rank * 8 + file;
                 if (c == 'K') kingIndex[0] = square;
                 else if (c == 'k') kingIndex[1] = square;
+                if (c >= 'a' && c <= 'z') pieceCount[1]++;
+                else pieceCount[0]++;
                 file++;
             }
         }

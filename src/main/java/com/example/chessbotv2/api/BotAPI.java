@@ -1,5 +1,6 @@
 package com.example.chessbotv2.api;
 
+import com.example.chessbotv2.bot.BoardUtil;
 import com.example.chessbotv2.bot.Bot;
 import com.example.chessbotv2.bot.Move;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -36,18 +37,25 @@ public class BotAPI {
         }
     }
 
+    public static class BotTestData {
+        public String fen;
+        public String mode;
+    }
+
     Bot bot;
 
-    @GetMapping("/startMatch")
-    public ResponseEntity<MatchStartData> startMatch(@RequestParam String mode) {
-        if (mode == null) {
+    @PostMapping("/startMatch")
+    public ResponseEntity<MatchStartData> startMatch(@RequestBody BotTestData data) {
+        if (data.mode == null) {
             System.err.println("A mode must be provided to start a match");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-        if (mode.equals("BotTest")) {
-            bot = new Bot("r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10");
-            MatchStartData data = new MatchStartData(bot.board.board, true);
-            return new ResponseEntity<>(data, HttpStatus.OK);
+        if (data.mode.equals("BotTest")) {
+            System.out.println("\f");
+            String fen = data.fen != null && !data.fen.isEmpty() ? data.fen : BoardUtil.DefaultFEN;
+            bot = new Bot(fen);
+            MatchStartData matchStartData = new MatchStartData(bot.board.board, true);
+            return new ResponseEntity<>(matchStartData, HttpStatus.OK);
         }
         return null;
     }
