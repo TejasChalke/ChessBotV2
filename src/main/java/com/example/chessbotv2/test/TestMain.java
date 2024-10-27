@@ -2,6 +2,7 @@ package com.example.chessbotv2.test;
 
 import com.example.chessbotv2.bot.Bot;
 import com.example.chessbotv2.bot.Move;
+import com.example.chessbotv2.bot.MoveUtil;
 
 public class TestMain {
     public static void main(String[] args) {
@@ -33,7 +34,39 @@ public class TestMain {
 //        testBot("Pawn next to EP pawn test", "8/8/8/KPpp3r/5pk1/1R6/4P1P1/8 w - c6 0 1", true, -1, -1, -1, -1, 1, false);
 
         // check for stalemate
-        testBot("Checkmate stalemate test test", "6k1/3Q4/5R2/4K3/8/8/8/8 w - -", true, -1, -1, -1, -1, 1, false);
+//        testBot("Checkmate stalemate test test", "6k1/3Q4/5R2/4K3/8/8/8/8 w - -", true, -1, -1, -1, -1, 1, false);
+
+        // check for notations
+        testNotations("Same file knight test", "7k/6pp/1N6/3p4/1N6/8/PP6/K7 b - - 0 1", new Move(25, 35, 'N'));
+        testNotations("Same rank knight test", "7k/6pp/8/3p4/1N3N2/8/PP6/K7 b - - 0 1", new Move(25, 35, 'N'));
+        testNotations("Unique file and rank knight", "7k/2N3pp/8/3p4/1N6/8/PP6/K7 b - - 0 1", new Move(25, 35, 'N'));
+        testNotations("Same file same rank knight test", "7k/6pp/1N6/3p4/1N3N2/8/PP6/K7 b - - 0 1", new Move(25, 35, 'N'));
+
+        testNotations("Same file knight test", "7k/6pp/1N6/8/1N6/8/PP6/K7 b - - 0 1", new Move(25, 35, 'N'));
+        testNotations("Same rank knight test", "7k/6pp/8/8/1N3N2/8/PP6/K7 b - - 0 1", new Move(25, 35, 'N'));
+        testNotations("Unique file and rank knight", "7k/2N3pp/8/8/1N6/8/PP6/K7 b - - 0 1", new Move(25, 35, 'N'));
+        testNotations("Same file same rank knight test", "7k/6pp/1N6/8/1N3N2/8/PP6/K7 b - - 0 1", new Move(25, 35, 'N'));
+
+        testNotations("Same file bishop test", "1B5k/6pp/3p4/8/1B6/8/PP6/K7 b - - 0 1", new Move(25, 43, 'N'));
+        testNotations("Same rank bishop test", "7k/6pp/3p4/8/1B3B2/8/PP6/K7 b - - 0 1", new Move(25, 43, 'N'));
+        testNotations("Unique file and rank bishop test", "1B5k/6pp/3p4/8/1B6/6B1/PP6/K7 b - - 0 1", new Move(25, 43, 'N'));
+        testNotations("Same file same rank bishop test", "1B5k/6pp/3p4/8/1B3B2/8/PP6/K7 b - - 0 1", new Move(25, 43, 'N'));
+
+        testNotations("Same file bishop test", "1B5k/6pp/8/8/1B6/8/PP6/K7 b - - 0 1", new Move(25, 43, 'N'));
+        testNotations("Same rank bishop test", "7k/6pp/8/8/1B3B2/8/PP6/K7 b - - 0 1", new Move(25, 43, 'N'));
+        testNotations("Unique file and rank bishop test", "1B5k/6pp/8/8/1B6/6B1/PP6/K7 b - - 0 1", new Move(25, 43, 'N'));
+        testNotations("Same file same rank bishop test", "1B5k/6pp/8/8/1B3B2/8/PP6/K7 b - - 0 1", new Move(25, 43, 'N'));
+    }
+
+    public static void testNotations(String testName, String fen, Move move) {
+        if (fen == null || fen.isEmpty()) {
+            System.err.println("Fen cannot be empty for testing");
+            return;
+        }
+        Bot bot = new Bot(fen);
+        System.out.println("Running : " + testName);
+        System.out.println("For move " + move + " the notation is " + MoveUtil.getMoveNotation(move, bot.board.board));
+        System.out.println("------------------------------------------------------");
     }
 
     public static void testBot(String testName, String fen, boolean testAttackMask, int pinSquare, int startSquare, int kingSquare, int targetSquare, int depth, boolean rangeTest) {

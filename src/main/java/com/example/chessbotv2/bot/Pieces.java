@@ -60,6 +60,8 @@ public class Pieces {
         return (BoardUtil.PlayerMask & piece1 & piece2) != 0;
     }
 
+    static boolean isSamePiece(int piece1, int piece2) { return (piece1 & 7) == (piece2 & 7); }
+
     static boolean isSlidingPiece(int piece) {
         piece &= 7;
         return piece == Rook || piece == Bishop || piece == Queen;

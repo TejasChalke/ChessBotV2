@@ -89,4 +89,77 @@ public class MoveUtil {
             };
         }
     }
+
+    public static String getMoveNotation(Move move, int[] board) {
+        StringBuilder sb = new StringBuilder();
+        int startingPiece = board[move.startingSquare];
+        int targetPiece = move.isEnPassant ? Pieces.Pawn : board[move.targetSquare];
+
+        if (!Pieces.isPawn(startingPiece)) {
+            char pieceCharacter = Pieces.intToCharMap[Pieces.White | (startingPiece & 7)];
+            sb.append(pieceCharacter);
+        }
+        else if (!Pieces.isNone(targetPiece)) {
+            // handle pawn moves and captures
+            char file = (char)('a' + (move.startingSquare % 8));
+            sb.append(file).append('x');
+        }
+
+        ArrayList<String> pieceSquares = getPieceSquares(move, board, startingPiece);
+        if (pieceSquares.size() > 1) {
+            String currSquare = BoardUtil.getSquareName(move.startingSquare);
+            boolean hasSameFile = false;
+            boolean hasSameRank = false;
+            for (String otherSquare: pieceSquares) {
+                if (!currSquare.equals(otherSquare) && otherSquare.charAt(0) == currSquare.charAt(0)) hasSameFile = true;
+                else if (!currSquare.equals(otherSquare) && otherSquare.charAt(1) == currSquare.charAt(1)) hasSameRank = true;
+            }
+
+            if (hasSameFile && hasSameRank) sb.append(currSquare);
+            else if (hasSameFile) sb.append(currSquare.charAt(1));
+            else if (hasSameRank) sb.append(currSquare.charAt(0));
+            else if (Pieces.isSlidingPiece(startingPiece)) sb.append(currSquare);
+        }
+
+        if (!Pieces.isPawn(startingPiece) && !Pieces.isNone(targetPiece)) {
+            sb.append('x');
+        }
+
+        sb.append(BoardUtil.getSquareName(move.targetSquare));
+        return sb.toString();
+    }
+
+    private static ArrayList<String> getPieceSquares(Move move, int[] board, int startingPiece) {
+        ArrayList<String> pieceSquares = new ArrayList<>();
+        if (Pieces.isSlidingPiece(startingPiece)) {
+            int startIndex = Pieces.isBishop(startingPiece) ? 4 : 0;
+            int endIndex = Pieces.isRook(startingPiece) ? 4 : 8;
+
+            for (int d=startIndex; d<endIndex; d++) {
+                int offSet = MoveUtil.slidingDirectionOffset[d];
+
+                for (int i = 1; i <= MoveUtil.preComputedSlidingDistance[move.targetSquare][d]; i++) {
+                    int possibleSquare = move.targetSquare + offSet * i;
+
+                    if (Pieces.isNone(board[possibleSquare])) continue;
+                    if (Pieces.isSameColor(startingPiece, board[possibleSquare]) && Pieces.isSamePiece(startingPiece, board[possibleSquare])) {
+                        pieceSquares.add(BoardUtil.getSquareName(possibleSquare));
+                    }
+                    break;
+                }
+            }
+        }
+        else if (Pieces.isKnight(startingPiece)) {
+            for (int possibleSquare: preComputedKnightMoves[move.targetSquare]) {
+                if (Pieces.isSameColor(startingPiece, board[possibleSquare]) && Pieces.isKnight(board[possibleSquare])) {
+                    pieceSquares.add(BoardUtil.getSquareName(possibleSquare));
+                }
+            }
+        }
+        return pieceSquares;
+    }
+
+    public static Move getConvertedMove(String move) {
+        return null;
+    }
 }
