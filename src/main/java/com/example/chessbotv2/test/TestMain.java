@@ -37,35 +37,54 @@ public class TestMain {
 //        testBot("Checkmate stalemate test test", "6k1/3Q4/5R2/4K3/8/8/8/8 w - -", true, -1, -1, -1, -1, 1, false);
 
         // check for notations
-        testNotations("Same file knight test", "7k/6pp/1N6/3p4/1N6/8/PP6/K7 b - - 0 1", new Move(25, 35, 'N'));
-        testNotations("Same rank knight test", "7k/6pp/8/3p4/1N3N2/8/PP6/K7 b - - 0 1", new Move(25, 35, 'N'));
-        testNotations("Unique file and rank knight", "7k/2N3pp/8/3p4/1N6/8/PP6/K7 b - - 0 1", new Move(25, 35, 'N'));
-        testNotations("Same file same rank knight test", "7k/6pp/1N6/3p4/1N3N2/8/PP6/K7 b - - 0 1", new Move(25, 35, 'N'));
+//        testNotations("Same file knight test", "7k/6pp/1N6/3p4/1N6/8/PP6/K7 b - - 0 1", new Move(25, 35, 'N'));
+//        testNotations("Same rank knight test", "7k/6pp/8/3p4/1N3N2/8/PP6/K7 b - - 0 1", new Move(25, 35, 'N'));
+//        testNotations("Unique file and rank knight", "7k/2N3pp/8/3p4/1N6/8/PP6/K7 b - - 0 1", new Move(25, 35, 'N'));
+//        testNotations("Same file same rank knight test", "7k/6pp/1N6/3p4/1N3N2/8/PP6/K7 b - - 0 1", new Move(25, 35, 'N'));
+//
+//        testNotations("Same file knight test", "7k/6pp/1N6/8/1N6/8/PP6/K7 b - - 0 1", new Move(25, 35, 'N'));
+//        testNotations("Same rank knight test", "7k/6pp/8/8/1N3N2/8/PP6/K7 b - - 0 1", new Move(25, 35, 'N'));
+//        testNotations("Unique file and rank knight", "7k/2N3pp/8/8/1N6/8/PP6/K7 b - - 0 1", new Move(25, 35, 'N'));
+//        testNotations("Same file same rank knight test", "7k/6pp/1N6/8/1N3N2/8/PP6/K7 b - - 0 1", new Move(25, 35, 'N'));
+//
+//        testNotations("Same file bishop test", "1B5k/6pp/3p4/8/1B6/8/PP6/K7 b - - 0 1", new Move(25, 43, 'N'));
+//        testNotations("Same rank bishop test", "7k/6pp/3p4/8/1B3B2/8/PP6/K7 b - - 0 1", new Move(25, 43, 'N'));
+//        testNotations("Unique file and rank bishop test", "1B5k/6pp/3p4/2B5/8/6B1/PP6/K7 b - - 0 1", new Move(34, 43, 'N'));
+//        testNotations("Same file same rank bishop test", "1B5k/6pp/3p4/8/1B3B2/8/PP6/K7 b - - 0 1", new Move(25, 43, 'N'));
+//
+//        testNotations("Same file bishop test", "1B5k/6pp/8/8/1B6/8/PP6/K7 b - - 0 1", new Move(25, 43, 'N'));
+//        testNotations("Same rank bishop test", "7k/6pp/8/8/1B3B2/8/PP6/K7 b - - 0 1", new Move(25, 43, 'N'));
+//        testNotations("Unique file and rank bishop test", "1B5k/6pp/8/2B5/8/6B1/PP6/K7 b - - 0 1", new Move(34, 43, 'N'));
+//        testNotations("Same file same rank bishop test", "1B5k/6pp/8/8/1B3B2/8/PP6/K7 b - - 0 1", new Move(25, 43, 'N'));
 
-        testNotations("Same file knight test", "7k/6pp/1N6/8/1N6/8/PP6/K7 b - - 0 1", new Move(25, 35, 'N'));
-        testNotations("Same rank knight test", "7k/6pp/8/8/1N3N2/8/PP6/K7 b - - 0 1", new Move(25, 35, 'N'));
-        testNotations("Unique file and rank knight", "7k/2N3pp/8/8/1N6/8/PP6/K7 b - - 0 1", new Move(25, 35, 'N'));
-        testNotations("Same file same rank knight test", "7k/6pp/1N6/8/1N3N2/8/PP6/K7 b - - 0 1", new Move(25, 35, 'N'));
+//        testNotations("Promote to Queen and Check Horizontal", "7k/P7/8/8/8/1BR5/PPQ5/K7 w - - 0 1", new Move(48, 56, 'Q'), 63);
+//        testNotations("Promote to Queen and Check Diagonal", "6p1/Pk6/8/8/8/1BR5/PPQ5/K7 w - - 0 1", new Move(48, 56, 'Q'), 49);
+//        testNotations("Promote to Queen and Check Vertical", "6p1/P7/k7/8/8/1BR5/PPQ5/K7 w - - 0 1", new Move(48, 56, 'Q'), 40);
+//        testNotations("Promote to Rook and Check", "7k/P7/8/8/8/1BR5/PPQ5/K7 w - - 0 1", new Move(48, 56, 'R'), 63);
+//        testNotations("Promote to Bishop and Check", "6p1/Pk6/8/8/8/1BR5/PPQ5/K7 w - - 0 1", new Move(48, 56, 'B'), 49);
+//        testNotations("Promote to Knight and Check", "6p1/P7/1k6/8/8/1BR5/PPQ5/K7 w - - 0 1", new Move(48, 56, 'N'), 41);
+//
+//        testNotations("Promote to Queen", "6pk/P7/8/8/8/1BR5/PPQ5/K7 w - - 0 1", new Move(48, 56, 'Q'), 63);
+//        testNotations("Promote to Rook", "6pk/P7/8/8/8/1BR5/PPQ5/K7 w - - 0 1", new Move(48, 56, 'R'), 63);
+//        testNotations("Promote to Bishop", "6pk/P7/8/8/8/1BR5/PPQ5/K7 w - - 0 1", new Move(48, 56, 'B'), 63);
+//        testNotations("Promote to Knight", "6pk/P7/8/8/8/1BR5/PPQ5/K7 w - - 0 1", new Move(48, 56, 'N'), 63);
+//
+//        testNotations("Capture promote to Queen and Check Horizontal", "r6k/1P6/8/8/8/1BR5/PPQ5/K7 w - - 0 1", new Move(49, 56, 'Q'), 63);
+//        testNotations("Capture promote to Queen and Check Diagonal", "r7/rP6/2k5/2p5/8/1BR5/PPQ5/K7 w - - 0 1", new Move(49, 56, 'Q'), 42);
+//        testNotations("Capture promote to Queen and Check Vertical", "r7/kP6/8/8/8/1BR5/PPQ5/K7 w - - 0 1", new Move(49, 56, 'Q'), 48);
 
-        testNotations("Same file bishop test", "1B5k/6pp/3p4/8/1B6/8/PP6/K7 b - - 0 1", new Move(25, 43, 'N'));
-        testNotations("Same rank bishop test", "7k/6pp/3p4/8/1B3B2/8/PP6/K7 b - - 0 1", new Move(25, 43, 'N'));
-        testNotations("Unique file and rank bishop test", "1B5k/6pp/3p4/8/1B6/6B1/PP6/K7 b - - 0 1", new Move(25, 43, 'N'));
-        testNotations("Same file same rank bishop test", "1B5k/6pp/3p4/8/1B3B2/8/PP6/K7 b - - 0 1", new Move(25, 43, 'N'));
-
-        testNotations("Same file bishop test", "1B5k/6pp/8/8/1B6/8/PP6/K7 b - - 0 1", new Move(25, 43, 'N'));
-        testNotations("Same rank bishop test", "7k/6pp/8/8/1B3B2/8/PP6/K7 b - - 0 1", new Move(25, 43, 'N'));
-        testNotations("Unique file and rank bishop test", "1B5k/6pp/8/8/1B6/6B1/PP6/K7 b - - 0 1", new Move(25, 43, 'N'));
-        testNotations("Same file same rank bishop test", "1B5k/6pp/8/8/1B3B2/8/PP6/K7 b - - 0 1", new Move(25, 43, 'N'));
+        testNotations("Castle king side", "4k3/8/8/8/8/8/1PPPPPP1/R3K2R w - - 0 1", new Move(4, 6, 'C'), -1);
+        testNotations("Castle queen side", "4k3/8/8/8/8/8/1PPPPPP1/R3K2R w - - 0 1", new Move(4, 2, 'C'), -1);
     }
 
-    public static void testNotations(String testName, String fen, Move move) {
+    public static void testNotations(String testName, String fen, Move move, int enemyKingIndex) {
         if (fen == null || fen.isEmpty()) {
             System.err.println("Fen cannot be empty for testing");
             return;
         }
         Bot bot = new Bot(fen);
         System.out.println("Running : " + testName);
-        System.out.println("For move " + move + " the notation is " + MoveUtil.getMoveNotation(move, bot.board.board));
+        System.out.println("For move " + move + " the notation is " + MoveUtil.getMoveNotation(move, bot.board.board, enemyKingIndex));
         System.out.println("------------------------------------------------------");
     }
 

@@ -1,7 +1,6 @@
 package com.example.chessbotv2.bot;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class MoveUtil {
     static ArrayList<Integer>[] preComputedKnightMoves = new ArrayList[64];
@@ -13,11 +12,6 @@ public class MoveUtil {
     * Last four are diagonal
     */
     static int[] slidingDirectionOffset = new int[] {8, -8, 1, -1, 7, -7, 9, -9};
-    /*
-    * 0 -> white pawn
-    * 1 -> black pawn
-    */
-    static int[][] pawnAttackOffset = new int[][] {{7, 9}, {-7, -9}};
     static int[][] preComputedSlidingDistance = new int[64][];
     static final int White_King_Start_Square = 4;
     static final int White_Queen_Side_Rook_Square = 0;
@@ -90,7 +84,11 @@ public class MoveUtil {
         }
     }
 
-    public static String getMoveNotation(Move move, int[] board) {
+    public static String getMoveNotation(Move move, int[] board, int enemyKingIndex) {
+        if (move.isCastle) {
+            return move.startingSquare < move.targetSquare ? "O-O" : "O-O-O";
+        }
+
         StringBuilder sb = new StringBuilder();
         int startingPiece = board[move.startingSquare];
         int targetPiece = move.isEnPassant ? Pieces.Pawn : board[move.targetSquare];
@@ -117,8 +115,7 @@ public class MoveUtil {
 
             if (hasSameFile && hasSameRank) sb.append(currSquare);
             else if (hasSameFile) sb.append(currSquare.charAt(1));
-            else if (hasSameRank) sb.append(currSquare.charAt(0));
-            else if (Pieces.isSlidingPiece(startingPiece)) sb.append(currSquare);
+            else sb.append(currSquare.charAt(0));
         }
 
         if (!Pieces.isPawn(startingPiece) && !Pieces.isNone(targetPiece)) {
@@ -126,6 +123,15 @@ public class MoveUtil {
         }
 
         sb.append(BoardUtil.getSquareName(move.targetSquare));
+        int pieceToCheck = startingPiece;
+        if (move.isPromoteToQueen) sb.append("=").append(Pieces.intToCharMap[pieceToCheck = (Pieces.White | Pieces.Queen)]);
+        else if (move.isPromoteToRook) sb.append("=").append(Pieces.intToCharMap[pieceToCheck = (Pieces.White | Pieces.Rook)]);
+        else if (move.isPromoteToBishop) sb.append("=").append(Pieces.intToCharMap[pieceToCheck = (Pieces.White | Pieces.Bishop)]);
+        else if (move.isPromoteToKnight) sb.append("=").append(Pieces.intToCharMap[pieceToCheck = (Pieces.White | Pieces.Knight)]);
+
+        if (!Pieces.isKing(pieceToCheck) && pieceIsCheckingKing(board, pieceToCheck | (Pieces.isWhite(startingPiece) ? Pieces.White : Pieces.Black), move.startingSquare, move.targetSquare, enemyKingIndex)) {
+            sb.append("+");
+        }
         return sb.toString();
     }
 
@@ -159,7 +165,84 @@ public class MoveUtil {
         return pieceSquares;
     }
 
-    public static Move getConvertedMove(String move) {
+    public static boolean pieceIsCheckingKing(int[] board, int piece, int pieceSquare, int startingSquare, int kingIndex) {
+        int kingRank = kingIndex / 8, kingFile = kingIndex % 8;
+        int pieceRank = startingSquare / 8, pieceFile = startingSquare % 8;
+        boolean isWhitePiece = Pieces.isWhite(piece);
+
+        if (Pieces.isPawn(piece)) {
+            if (isWhitePiece && kingRank == pieceRank + 1 && ((pieceFile > 0 && startingSquare + 7 == kingIndex) || (pieceFile < 7 && startingSquare + 9 == kingIndex))) return true;
+            else if (!isWhitePiece && kingRank == pieceRank - 1 && ((pieceFile > 0 && startingSquare - 9 == kingIndex) || (pieceFile < 7 && startingSquare - 7 == kingIndex))) return true;
+        }
+        else if (Pieces.isKnight(piece)) {
+            for (int targetSquare: preComputedKnightMoves[startingSquare]) {
+                if (targetSquare == kingIndex) return true;
+            }
+        }
+
+        if ((Pieces.isRook(piece) || Pieces.isQueen(piece)) && (pieceRank == kingRank || pieceFile == kingFile)) {
+            int itr = 0, change = 0;
+            if (pieceRank == kingRank) {
+                if (pieceFile < kingFile) itr = change = 1;
+                else itr = change = -1;
+            }
+            else {
+                if (pieceRank < kingRank) itr = change = 8;
+                else itr = change = -8;
+            }
+
+            while (startingSquare + itr != kingIndex && (startingSquare + itr == pieceSquare || Pieces.isNone(board[startingSquare + itr]))) itr += change;
+            if (startingSquare + itr == kingIndex) return true;
+            else if (Pieces.isRook(piece)) return false;
+        }
+
+        if ((Pieces.isBishop(piece) || Pieces.isQueen(piece)) && (Math.abs(kingFile - pieceFile) == Math.abs(kingRank - pieceRank))) {
+            int itr = 0, change = 0;
+            if (pieceRank < kingRank) {
+                if (pieceFile < kingFile) itr = change = 9;
+                else itr = change = 7;
+            }
+            else {
+                if (pieceFile < kingFile) itr = change = -7;
+                else itr = change = -9;
+            }
+
+            while (startingSquare + itr != kingIndex && (startingSquare + itr == pieceSquare || Pieces.isNone(board[startingSquare + itr]))) itr += change;
+            return startingSquare + itr == kingIndex;
+        }
+        return false;
+    }
+
+    public static Move getMoveFromNotation(Board board, String moveNotation) {
+        int startingSquare = -1, targetSquare = -1;
+        char moveType = Move.NormalMove;
+        try {
+            if (moveNotation.length() == 2) {
+                // pawn move, handles one and 2 squares ahead
+                targetSquare = BoardUtil.getSquareIndex(moveNotation);
+                if (board.isWhiteToMove())  {
+                    startingSquare = Pieces.isNone(board.board[targetSquare - 8]) ? targetSquare - 16 : targetSquare - 8;
+                }
+                else {
+                    startingSquare = Pieces.isNone(board.board[targetSquare + 8]) ? targetSquare + 16 : targetSquare + 8;
+                }
+                if (Math.abs(startingSquare - targetSquare) / 8 == 2) moveType = Move.TwoAhead;
+                return new Move(startingSquare, targetSquare, moveType);
+            }
+
+            if (moveNotation.equals("O-O") || moveNotation.equals("O-O-O")) {
+                startingSquare = board.isWhiteToMove() ? White_King_Start_Square : Black_King_Start_Square;
+                targetSquare = moveNotation.equals("O-O") ? startingSquare + 2 : startingSquare - 2;
+                return new Move(startingSquare, targetSquare, Move.Castle);
+            }
+
+            // promotions
+            // castling
+            // captures (includes en passant)
+        }
+        catch (Exception e) {
+            System.out.println();
+        }
         return null;
     }
 }

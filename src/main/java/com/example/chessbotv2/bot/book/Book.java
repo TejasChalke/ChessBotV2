@@ -1,5 +1,6 @@
 package com.example.chessbotv2.bot.book;
 
+import com.example.chessbotv2.bot.Board;
 import com.example.chessbotv2.bot.Move;
 import com.example.chessbotv2.bot.MoveUtil;
 
@@ -9,7 +10,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Random;
 
 public class Book {
@@ -69,8 +69,8 @@ public class Book {
         return root != null && !root.nextMove.isEmpty();
     }
 
-    void moveIterator(Move move, int[] board) {
-        String formattedMove = MoveUtil.getMoveNotation(move, board);
+    void moveIterator(Move move, int[] board, int enemyKingIndex) {
+        String formattedMove = MoveUtil.getMoveNotation(move, board, enemyKingIndex);
         if (root != null && root.nextMove.containsKey(formattedMove)) {
             root = root.nextMove.get(formattedMove);
         }
@@ -79,7 +79,7 @@ public class Book {
         }
     }
 
-    Move getBookMove() {
+    Move getBookMove(Board board) {
         int size = root.nextMove.size();
         if (size == 0) {
             return null; // return null or throw an exception if the map is empty
@@ -95,6 +95,6 @@ public class Book {
         }
 
         String move = iterator.next().getKey();
-        return MoveUtil.getConvertedMove(move);
+        return MoveUtil.getMoveFromNotation(board, move);
     }
 }
