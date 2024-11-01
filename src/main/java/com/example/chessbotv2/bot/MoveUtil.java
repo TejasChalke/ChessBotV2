@@ -217,8 +217,25 @@ public class MoveUtil {
         int startingSquare = -1, targetSquare = -1;
         char moveType = Move.NormalMove;
         try {
+            // remove the '+' mark for checks
+            if (moveNotation.charAt(moveNotation.length() - 1) == '+') {
+                moveNotation = moveNotation.substring(0, moveNotation.length() - 1);
+            }
+
+            if (moveNotation.equals("O-O") || moveNotation.equals("O-O-O")) {
+                startingSquare = board.isWhiteToMove() ? White_King_Start_Square : Black_King_Start_Square;
+                targetSquare = moveNotation.equals("O-O") ? startingSquare + 2 : startingSquare - 2;
+                return new Move(startingSquare, targetSquare, Move.Castle);
+            }
+
+            // promotions
+            if (moveNotation.contains("=")) {
+                moveType = moveNotation.charAt(moveNotation.length() - 1);
+                moveNotation = moveNotation.substring(0, moveNotation.length() - 2);
+            }
+
             if (moveNotation.length() == 2) {
-                // pawn move, handles one and 2 squares ahead
+                // pawn move, handles 1 and 2 squares ahead, and promotions
                 targetSquare = BoardUtil.getSquareIndex(moveNotation);
                 if (board.isWhiteToMove())  {
                     startingSquare = Pieces.isNone(board.board[targetSquare - 8]) ? targetSquare - 16 : targetSquare - 8;
@@ -230,19 +247,94 @@ public class MoveUtil {
                 return new Move(startingSquare, targetSquare, moveType);
             }
 
-            if (moveNotation.equals("O-O") || moveNotation.equals("O-O-O")) {
-                startingSquare = board.isWhiteToMove() ? White_King_Start_Square : Black_King_Start_Square;
-                targetSquare = moveNotation.equals("O-O") ? startingSquare + 2 : startingSquare - 2;
-                return new Move(startingSquare, targetSquare, Move.Castle);
+            // get the targetSquare
+            targetSquare = BoardUtil.getSquareIndex(moveNotation.substring(moveNotation.length() - 2));
+            moveNotation = moveNotation.substring(0, moveNotation.length() - 2);
+
+            // remove the 'x' mark from the move
+            if (moveNotation.charAt(moveNotation.length() - 1) == 'x') {
+                moveNotation = moveNotation.substring(0, moveNotation.length() - 1);
             }
 
-            // promotions
-            // castling
-            // captures (includes en passant)
+            // handles pawn captures and en passant
+            if (moveNotation.length() == 1 && moveNotation.charAt(0) >= 'a' && moveNotation.charAt(0) <= 'z') {
+                int startingRank = targetSquare / 8 + (board.isWhiteToMove() ?  -1 : + 1);
+                int startingFile = moveNotation.charAt(0) - 'a';
+                startingSquare = startingRank * 8 + startingFile;
+
+                if (targetSquare == board.epSquare) moveType = Move.EnPassant;
+                return new Move(startingSquare, targetSquare, moveType);
+            }
+
+            // gives the complete square notation
+            if (moveNotation.length() == 3) {
+                startingSquare = BoardUtil.getSquareIndex(moveNotation.substring(1));
+                return new Move(startingSquare, targetSquare, moveType);
+            }
+
+            // moveNotation of length 1
+            char movePiece = moveNotation.charAt(0);
+            if (moveNotation.length() == 1) {
+                if (movePiece == 'K') {
+                    for (int possibleSquare: preComputedKingMoves[targetSquare]) {
+                        if (!Pieces.isKing(board.board[possibleSquare]) || (board.isWhiteToMove() != Pieces.isWhite(board.board[possibleSquare]))) continue;
+                        return new Move(possibleSquare, targetSquare, moveType);
+                    }
+                }
+                if (movePiece == 'N') {
+                    for (int possibleSquare: preComputedKnightMoves[targetSquare]) {
+                        if (!Pieces.isKnight(board.board[possibleSquare]) || (board.isWhiteToMove() != Pieces.isWhite(board.board[possibleSquare]))) continue;
+                        return new Move(possibleSquare, targetSquare, moveType);
+                    }
+                }
+
+                for (int d=0; d<8; d++) {
+                    int offSet = slidingDirectionOffset[d];
+                    for (int i=1; i<=preComputedSlidingDistance[targetSquare][d]; i++) {
+                        int possibleSquare = startingSquare + offSet * i;
+                        if ((movePiece == 'B' && Pieces.isBishop(board.board[possibleSquare])) || (movePiece == 'R' && Pieces.isRook(board.board[possibleSquare])) || (movePiece == 'Q' && Pieces.isQueen(board.board[possibleSquare]))) {
+                            if (board.isWhiteToMove() == Pieces.isWhite(board.board[possibleSquare])) {
+                                return new Move(possibleSquare, targetSquare, moveType);
+                            }
+                        }
+                        if (!Pieces.isNone(board.board[possibleSquare])) break;
+                    }
+                }
+            }
+
+            // moveNotation of length 2 is remaining
+            // [Piece][Rank OR File]
+            char rankOrFile = moveNotation.charAt(1);
+            if (movePiece == 'N') {
+                for (int possibleSquare: preComputedKnightMoves[targetSquare]) {
+                    if (!Pieces.isKnight(board.board[possibleSquare]) || (board.isWhiteToMove() != Pieces.isWhite(board.board[possibleSquare]))) continue;
+                    char rank = (char)('1' + possibleSquare / 8);
+                    char file = (char)('a' + possibleSquare % 8);
+                    if (rank == rankOrFile || file == rankOrFile) {
+                        return new Move(possibleSquare, targetSquare, moveType);
+                    }
+                }
+            }
+
+            for (int d=0; d<8; d++) {
+                int offSet = slidingDirectionOffset[d];
+                for (int i=1; i<=preComputedSlidingDistance[targetSquare][d]; i++) {
+                    int possibleSquare = startingSquare + offSet * i;
+                    char rank = (char)('1' + possibleSquare / 8);
+                    char file = (char)('a' + possibleSquare % 8);
+                    if ((movePiece == 'B' && Pieces.isBishop(board.board[possibleSquare])) || (movePiece == 'R' && Pieces.isRook(board.board[possibleSquare])) || (movePiece == 'Q' && Pieces.isQueen(board.board[possibleSquare]))) {
+                        if (board.isWhiteToMove() == Pieces.isWhite(board.board[possibleSquare]) && (rank == rankOrFile || file == rankOrFile)) {
+                            return new Move(possibleSquare, targetSquare, moveType);
+                        }
+                    }
+                    if (!Pieces.isNone(board.board[possibleSquare])) break;
+                }
+            }
         }
         catch (Exception e) {
-            System.out.println();
+            System.err.println("Unable to generate move from notation");
+            System.out.println(e.getMessage());
         }
-        return null;
+        return new Move(startingSquare, targetSquare, moveType);
     }
 }

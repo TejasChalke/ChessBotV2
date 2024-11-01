@@ -73,8 +73,29 @@ public class TestMain {
 //        testNotations("Capture promote to Queen and Check Diagonal", "r7/rP6/2k5/2p5/8/1BR5/PPQ5/K7 w - - 0 1", new Move(49, 56, 'Q'), 42);
 //        testNotations("Capture promote to Queen and Check Vertical", "r7/kP6/8/8/8/1BR5/PPQ5/K7 w - - 0 1", new Move(49, 56, 'Q'), 48);
 
-        testNotations("Castle king side", "4k3/8/8/8/8/8/1PPPPPP1/R3K2R w - - 0 1", new Move(4, 6, 'C'), -1);
-        testNotations("Castle queen side", "4k3/8/8/8/8/8/1PPPPPP1/R3K2R w - - 0 1", new Move(4, 2, 'C'), -1);
+//        testNotations("Castle king side", "4k3/8/8/8/8/8/1PPPPPP1/R3K2R w - - 0 1", new Move(4, 6, 'C'), -1);
+//        testNotations("Castle queen side", "4k3/8/8/8/8/8/1PPPPPP1/R3K2R w - - 0 1", new Move(4, 2, 'C'), -1);
+
+        testNotationConversion("Pawn one move ahead", "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", "b3");
+        testNotationConversion("Pawn two move ahead", "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", "a4");
+        testNotationConversion("Pawn capture", "r6k/6pp/8/4p3/3P4/8/PP6/K7 w - - 0 1", "dxe5");
+        testNotationConversion("En passant", "r6k/6pp/8/3Pp3/8/8/PP6/K7 w - e6 0 1", "dxe6");
+
+        testNotationConversion("Pawn promotion", "r5rk/1P4pp/8/4p3/8/8/PP6/K7 w - - 0 1", "b8=Q");
+        testNotationConversion("Pawn promotion with check", "r6k/1P4pp/8/4p3/8/8/PP6/K7 w - - 0 1", "b8=Q+");
+        testNotationConversion("Pawn promotion with capture", "r5rk/1P4pp/8/4p3/8/8/PP6/K7 w - - 0 1", "bxa8=Q");
+        testNotationConversion("Pawn promotion with capture and check", "r6k/1P4pp/8/4p3/8/8/PP6/K7 w - - 0 1", "bxa8=Q+");
+    }
+
+    public static void testNotationConversion(String testName, String fen, String moveNotation) {
+        if (fen == null || fen.isEmpty()) {
+            System.err.println("Fen cannot be empty for testing");
+            return;
+        }
+        Bot bot = new Bot(fen);
+        System.out.println("Running : " + testName);
+        System.out.println("For moveNotation " + moveNotation + " the move is " + MoveUtil.getMoveFromNotation(bot.board, moveNotation));
+        System.out.println("------------------------------------------------------");
     }
 
     public static void testNotations(String testName, String fen, Move move, int enemyKingIndex) {
