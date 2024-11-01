@@ -291,7 +291,7 @@ public class MoveUtil {
                 for (int d=0; d<8; d++) {
                     int offSet = slidingDirectionOffset[d];
                     for (int i=1; i<=preComputedSlidingDistance[targetSquare][d]; i++) {
-                        int possibleSquare = startingSquare + offSet * i;
+                        int possibleSquare = targetSquare + offSet * i;
                         if ((movePiece == 'B' && Pieces.isBishop(board.board[possibleSquare])) || (movePiece == 'R' && Pieces.isRook(board.board[possibleSquare])) || (movePiece == 'Q' && Pieces.isQueen(board.board[possibleSquare]))) {
                             if (board.isWhiteToMove() == Pieces.isWhite(board.board[possibleSquare])) {
                                 return new Move(possibleSquare, targetSquare, moveType);
@@ -319,7 +319,7 @@ public class MoveUtil {
             for (int d=0; d<8; d++) {
                 int offSet = slidingDirectionOffset[d];
                 for (int i=1; i<=preComputedSlidingDistance[targetSquare][d]; i++) {
-                    int possibleSquare = startingSquare + offSet * i;
+                    int possibleSquare = targetSquare + offSet * i;
                     char rank = (char)('1' + possibleSquare / 8);
                     char file = (char)('a' + possibleSquare % 8);
                     if ((movePiece == 'B' && Pieces.isBishop(board.board[possibleSquare])) || (movePiece == 'R' && Pieces.isRook(board.board[possibleSquare])) || (movePiece == 'Q' && Pieces.isQueen(board.board[possibleSquare]))) {

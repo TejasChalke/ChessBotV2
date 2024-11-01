@@ -20,12 +20,12 @@ public class Book {
         }
     }
 
-    MoveIterator root;
+    MoveIterator root, itr;
     int maxBookDepth;
 
     public Book() {
         root = new MoveIterator();
-        maxBookDepth = 20;
+        maxBookDepth = 26;
         initBook();
     }
 
@@ -36,51 +36,46 @@ public class Book {
     }
 
     public void initBook() {
-        String fileName = "Games.txt";
+        String fileName = "/Games.txt";
         int linesAdded = 0;
 
-        try (InputStream inputStream = getClass().getResourceAsStream(fileName);
-             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
-
-            String game;
-            // Read the games
-            while ((game = reader.readLine()) != null) {
-                MoveIterator itr = root;
-                String[] moves = game.split(" ");
-                int currentDepth = 0;
-                for (String move: moves) {
-                    if (currentDepth == maxBookDepth) break;
-                    if (!itr.nextMove.containsKey(move)) {
-                        // add a new move
-                        itr.nextMove.put(move, new MoveIterator());
-                        linesAdded++;
-                    }
-                    itr = itr.nextMove.get(move);
-                }
+        try (InputStream inputStream = getClass().getResourceAsStream(fileName)) {
+            if (inputStream == null) {
+                throw new IOException("Resource not found: " + fileName);
             }
-            System.out.println(linesAdded + " lines are available...");
+
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+                String game;
+                // Read the games
+                while ((game = reader.readLine()) != null) {
+                    MoveIterator itr = root;
+                    String[] moves = game.split(" ");
+                    int currentDepth = 0;
+                    for (String move: moves) {
+                        if (move.equals("1-0") || move.equals("0-1") || move.equals("1/2-1/2")) break;
+                        if (currentDepth++ == maxBookDepth) break;
+                        if (!itr.nextMove.containsKey(move)) {
+                            // add a new move
+                            itr.nextMove.put(move, new MoveIterator());
+                            linesAdded++;
+                        }
+                        itr = itr.nextMove.get(move);
+                    }
+                }
+                itr = root;
+                System.out.println(linesAdded + " lines are available...");
+            }
         } catch (IOException e) {
-            System.err.println("Error initializing book");
-            e.printStackTrace();
+            System.err.println("Error initializing book: " + e.getMessage());
         }
     }
 
-    boolean isBookMoveAvailable() {
-        return root != null && !root.nextMove.isEmpty();
+    public boolean isBookMoveAvailable() {
+        return itr != null && !itr.nextMove.isEmpty();
     }
 
-    void moveIterator(Move move, int[] board, int enemyKingIndex) {
-        String formattedMove = MoveUtil.getMoveNotation(move, board, enemyKingIndex);
-        if (root != null && root.nextMove.containsKey(formattedMove)) {
-            root = root.nextMove.get(formattedMove);
-        }
-        else {
-            root = null;
-        }
-    }
-
-    Move getBookMove(Board board) {
-        int size = root.nextMove.size();
+    public Move getBookMove(Board board) {
+        int size = itr.nextMove.size();
         if (size == 0) {
             return null; // return null or throw an exception if the map is empty
         }
@@ -89,12 +84,22 @@ public class Book {
         int randomIndex = new Random().nextInt(size);
 
         // Use iterator to reach the random index
-        Iterator<HashMap.Entry<String, MoveIterator>> iterator = root.nextMove.entrySet().iterator();
+        Iterator<HashMap.Entry<String, MoveIterator>> iterator = itr.nextMove.entrySet().iterator();
         for (int i = 0; i < randomIndex; i++) {
             iterator.next();
         }
 
-        String move = iterator.next().getKey();
-        return MoveUtil.getMoveFromNotation(board, move);
+        var moveEntry = iterator.next();
+        itr = moveEntry.getValue();
+        System.out.println("Book move tried: " + moveEntry.getKey());
+        return MoveUtil.getMoveFromNotation(board, moveEntry.getKey());
+    }
+
+    public void invalidate() {
+        itr = null;
+    }
+
+    public void resetIterator() {
+        itr = root;
     }
 }

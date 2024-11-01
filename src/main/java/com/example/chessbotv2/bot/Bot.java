@@ -1,6 +1,7 @@
 package com.example.chessbotv2.bot;
 
-import java.lang.reflect.Array;
+import com.example.chessbotv2.bot.book.Book;
+
 import java.util.*;
 
 public class Bot {
@@ -15,14 +16,17 @@ public class Bot {
     boolean changeStats;
     Move bestMove;
     HashMap<String, Integer> moveCnt;
+    Book book;
 
     public Bot() {
         board = new Board();
+        book = new Book();
         init(board);
     }
 
     public Bot(String fen) {
         board = new Board(fen);
+        book = null;
         init(board);
     }
 
@@ -36,13 +40,30 @@ public class Bot {
     public void resetBoard() {
         prevBoardState.clear();
         board.resetBoard();
+        if (book == null) {
+            book = new Book();
+        }
+        book.resetIterator();
     }
 
     public Move playMove() {
+        bestMove = null;
+        String moveType = "book";
         // find best move
         System.out.println("Looking for move....");
-        findBestMove();
-        System.out.println("Search ended: " + bestMove);
+        if (book != null && book.isBookMoveAvailable()) {
+            bestMove = book.getBookMove(board);
+            if (bestMove == null || bestMove.startingSquare == -1) {
+                book.invalidate();
+                System.err.println("Error getting valid book move");
+                findBestMove();
+                moveType = "search";
+            }
+        } else {
+            findBestMove();
+            moveType = "search";
+        }
+        System.out.println("Search ended: " + bestMove + " (" + moveType + ")");
         // make the move
         if (bestMove != null && bestMove.startingSquare != -1 && bestMove.startingSquare != 64) {
             makeMove(bestMove, false);
@@ -52,7 +73,6 @@ public class Bot {
     }
 
     public void findBestMove() {
-        bestMove = null;
         int score = search(4, 0, MIN_VAL, MAX_VAL);
         if (bestMove == null) {
             if (score == 0) {
@@ -92,17 +112,17 @@ public class Bot {
         HashSet<Integer> kingCheckIndexes = moveGenerator.getPossibleCheckSquares(board.kingIndex[board.isWhiteToMove() ? 1 : 0], (board.isWhiteToMove() ? Pieces.Black : Pieces.White) | Pieces.King);
         arrangeMoves(legalMoves, kingCheckIndexes);
         for (Move move: legalMoves) {
-            StringBuilder sb = new StringBuilder();
-            if (movesFromRoot == 0) {
-                sb.append("Move played : ").append(move);
-            }
+//            StringBuilder sb = new StringBuilder();
+//            if (movesFromRoot == 0) {
+//                sb.append("Move played : ").append(move);
+//            }
             makeMove(move, true);
             int eval = -search(depth - 1, movesFromRoot + 1, -beta, -alpha);
             unMakeMove(move);
-            if (movesFromRoot == 0) {
-                sb.append(" with eval ").append(eval);
-                System.out.println(sb.toString());
-            }
+//            if (movesFromRoot == 0) {
+//                sb.append(" with eval ").append(eval);
+//                System.out.println(sb.toString());
+//            }
 
             if (eval >= beta) {
                 return beta;

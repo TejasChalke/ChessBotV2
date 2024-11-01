@@ -52,8 +52,7 @@ public class BotAPI {
         }
         if (data.mode.equals("BotTest")) {
             System.out.println("\f");
-            String fen = data.fen != null && !data.fen.isEmpty() ? data.fen : BoardUtil.DefaultFEN;
-            bot = new Bot(fen);
+            bot = data.fen != null && !data.fen.isEmpty() ? new Bot(data.fen) : new Bot();
             MatchStartData matchStartData = new MatchStartData(bot.board.board, true);
             return new ResponseEntity<>(matchStartData, HttpStatus.OK);
         }
